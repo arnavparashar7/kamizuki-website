@@ -1,7 +1,18 @@
-/**
- * KAMIZUKI : MAIN APPLICATION COORDINATOR
- * Connects Thirdweb Web3 & Eligibility events to existing UI components.
- */
+// Immediately expose modal functions so clicks work regardless of load timing
+window.openModal = function(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.add('active');
+};
+
+window.closeModal = function(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.remove('active');
+};
+
+// Check for file:// protocol
+if (window.location.protocol === 'file:') {
+  console.warn('[KamiZuki] WARNING: Running via file:// protocol. Local web server ("npm run dev") is required for Web3 extensions, Thirdweb, and ES modules.');
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log("KamiZuki Web3 Game Ecosystem Initialized.");
@@ -160,7 +171,10 @@ function initWeb3UI() {
   const walletAddrEl = document.getElementById('connected-wallet-addr');
   const eligibilityBox = document.getElementById('eligibility-status-box');
 
-  window.kamiZukiWeb3.subscribe((state) => {
+  const bindProvider = () => {
+    if (!window.kamiZukiWeb3) return false;
+
+    window.kamiZukiWeb3.subscribe((state) => {
     // 1. Navbar Wallet Button vs Connected Pill
     if (state.status === 'connected') {
       walletBtns.forEach(b => b.style.display = 'none');
@@ -261,6 +275,18 @@ function initWeb3UI() {
       ticketsCountEl.textContent = state.ticketsOwned;
     }
   });
+  return true;
+};
+
+  if (!bindProvider()) {
+    let attempts = 0;
+    const interval = setInterval(() => {
+      attempts++;
+      if (bindProvider() || attempts > 60) {
+        clearInterval(interval);
+      }
+    }, 50);
+  }
 
   if (walletPill) {
     walletPill.addEventListener('click', () => {
@@ -295,6 +321,16 @@ function initModals() {
 
 window.connectWallet = async function(walletType = 'walletConnect') {
   closeModal('wallet-modal');
+
+  if (!window.kamiZukiWeb3) {
+    if (window.location.protocol === 'file:') {
+      alert("⚠️ Direct file opening (file://) detected!\n\nBrowsers block Web3 wallets, Thirdweb SDK, and game communications on file://.\n\nPlease start the local server by running:\n  npm run dev\nand open http://localhost:3000 in your browser.");
+      return;
+    }
+    showToast('Initializing Web3 provider, please wait a moment...', 'warning');
+    return;
+  }
+
   showToast('Connecting via Thirdweb...', 'info');
   const res = await window.kamiZukiWeb3.connectWallet(walletType);
   if (res.success) {
@@ -370,7 +406,7 @@ function initPage3Tabs() {
 window.restartGame = function() {
   const iframe = document.getElementById('kamizuki-game-iframe');
   if (iframe) {
-    iframe.src = 'game/index.html?mode=framed&t=' + Date.now();
+    iframe.src = 'game/?mode=framed&t=' + Date.now();
     showToast('🔄 Stage 1 restarted.', 'info');
   }
 };

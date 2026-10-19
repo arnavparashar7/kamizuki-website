@@ -1,0 +1,20 @@
+{
+  "name": "kamizuki-website",
+  "version": "1.0.0",
+  "description": "KamiZuki : Dark Japanese Fantasy Web3 Game Ecosystem",
+  "scripts": {
+    "dev": "npx serve -l 3000 .",
+    "start": "npx serve -l 3000 .",
+    "serve": "npx serve -l 3000 .",
+    "build:game": "npm run build --prefix 2d-platformer"
+  },
+  "keywords": [
+    "kamizuki",
+    "web3",
+    "thirdweb",
+    "phaser",
+    "platformer"
+  ],
+  "author": "Godheid",
+  "license": "MIT"
+}
