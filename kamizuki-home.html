@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZecZuki : Home</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: { extend: {
+      colors: {
+        void: '#0e0a0a', panel: '#1a1212', line: 'rgba(255,255,255,0.09)',
+        crimson: '#b91c2c', crimsonLight: '#e0432f', parchment: '#f0e6d2',
+        parchmentDim: '#cbb89a', ink: '#1a1212'
+      },
+      fontFamily: { display: ['Anton','sans-serif'], sans: ['IBM Plex Sans','sans-serif'], mono: ['IBM Plex Mono','monospace'] }
+    }}
+  }
+</script>
+<style>
+  body{background:#0e0a0a;}
+  .placeholder{background:repeating-linear-gradient(135deg,#2a1a1a,#2a1a1a 10px,#231515 10px,#231515 20px);border:1.5px dashed rgba(224,67,47,0.5);}
+  .placeholder-label{font-family:'IBM Plex Mono',monospace;color:#e0432f;}
+  .petal{position:absolute;color:#e0432f;opacity:.35;pointer-events:none;}
+</style>
+</head>
+<body class="text-white font-sans">
+
+<!-- NAV -->
+<nav class="flex items-center justify-between px-8 py-4 border-b border-line">
+  <div class="font-display text-2xl tracking-wide">
+    Kami<span class="text-crimson">Zuki</span> <span class="site-name hidden"></span>
+  </div>
+  <div class="flex gap-8 text-sm font-medium text-white/70">
+    <a href="#" class="text-white">Home</a>
+    <a href="#">Game</a>
+    <a href="#">Roadmap</a>
+    <a href="#">Collection</a>
+    <a href="#">Token</a>
+  </div>
+  <button class="bg-crimson hover:bg-crimsonLight transition text-white text-sm font-semibold px-5 py-2.5 rounded-md">Connect Wallet</button>
+</nav>
+
+<!-- HERO -->
+<section class="relative overflow-hidden px-8 pt-16 pb-10 min-h-[560px]">
+  <!-- ASSET PLACEHOLDER: hero background scene (moon, mountains, torii, pagodas) -->
+  <div class="placeholder absolute inset-0 -z-10 flex items-end justify-center">
+    <span class="placeholder-label text-xs">ICON : hero background scene (moon / mountains / torii / pagodas)</span>
+  </div>
+  <span class="petal text-3xl" style="top:8%;left:60%;">✻</span>
+  <span class="petal text-xl" style="top:20%;left:75%;">✻</span>
+  <span class="petal text-2xl" style="top:40%;left:50%;">✻</span>
+
+  <div class="max-w-xl">
+    <div class="font-mono text-xs tracking-widest text-parchmentDim mb-3">神月</div>
+    <h1 class="font-display text-6xl md:text-7xl leading-none mb-4">
+      Kami<span class="text-crimson">Zuki</span>
+    </h1>
+    <p class="font-mono text-xs tracking-widest text-parchmentDim mb-8 max-w-sm">
+      A PLAY-TO-EARN ADVENTURE IN A WORLD OF GODS, SAMURAI AND SPIRITS.
+    </p>
+    <div class="flex gap-4">
+      <button class="bg-crimson hover:bg-crimsonLight transition font-semibold text-sm px-6 py-3 rounded-md">Connect Wallet</button>
+      <button class="border border-white/30 hover:border-white/60 transition font-semibold text-sm px-6 py-3 rounded-md flex items-center gap-2">Watch Trailer ▶</button>
+    </div>
+  </div>
+
+  <!-- ASSET PLACEHOLDER: hero character illustration -->
+  <div class="placeholder absolute right-10 bottom-0 w-72 h-96 hidden lg:flex items-center justify-center">
+    <span class="placeholder-label text-xs text-center px-4">ICON<br>hero character illustration<br>(samurai figure, transparent bg)</span>
+  </div>
+
+  <!-- ASSET PLACEHOLDER: vertical kanji + tagline column -->
+  <div class="placeholder absolute right-4 top-16 w-16 h-56 hidden xl:flex items-center justify-center">
+    <span class="placeholder-label text-[10px] text-center px-1 leading-tight">ICON<br>vertical kanji column<br>"神に挑め"<br>+ PLAY/PROVE/EARN</span>
+  </div>
+</section>
+
+<!-- STATS ROW -->
+<section class="flex flex-wrap justify-center gap-x-16 gap-y-6 py-10 border-b border-line text-center">
+  <div><div class="font-display text-4xl">555</div><div class="font-mono text-xs text-parchmentDim tracking-wide mt-1">Total NFTs</div></div>
+  <div><div class="font-display text-4xl">6</div><div class="font-mono text-xs text-parchmentDim tracking-wide mt-1">Game Stages</div></div>
+  <div><div class="font-display text-4xl">1</div><div class="font-mono text-xs text-parchmentDim tracking-wide mt-1">Stage Live</div></div>
+  <div><div class="font-display text-4xl">2</div><div class="font-mono text-xs text-parchmentDim tracking-wide mt-1">Ways to Earn (NFT + Token)</div></div>
+</section>
+
+<!-- ELIGIBILITY CHECK (parchment card : intentional light-theme break) -->
+<section class="px-8 py-14">
+  <div class="max-w-5xl mx-auto bg-parchment text-ink rounded-2xl p-8 relative overflow-hidden">
+    <h2 class="font-display text-2xl tracking-wide mb-2">CHECK YOUR NFT ELIGIBILITY</h2>
+    <p class="text-sm text-ink/70 mb-6 max-w-lg">Hold an NFT from any of our partner collections below to unlock the game and start your journey.</p>
+
+    <div class="bg-void text-white rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div>
+        <div class="font-semibold mb-1">Connect your wallet</div>
+        <p class="text-sm text-white/60 mb-4 max-w-xs">Verify your NFT holdings to see if you're eligible for the ZecZuki trial.</p>
+        <button class="bg-crimson hover:bg-crimsonLight transition text-sm font-semibold px-5 py-2.5 rounded-md">Connect Wallet</button>
+      </div>
+      <div>
+        <div class="font-mono text-[11px] tracking-widest text-parchmentDim mb-2">SUPPORTED COLLECTIONS</div>
+        <div class="flex items-center gap-2">
+          <!-- ASSET PLACEHOLDER x4: partner collection avatar icons -->
+          <div class="placeholder w-9 h-9 rounded-full flex items-center justify-center"><span class="placeholder-label text-[7px]">icon</span></div>
+          <div class="placeholder w-9 h-9 rounded-full flex items-center justify-center"><span class="placeholder-label text-[7px]">icon</span></div>
+          <div class="placeholder w-9 h-9 rounded-full flex items-center justify-center"><span class="placeholder-label text-[7px]">icon</span></div>
+          <div class="placeholder w-9 h-9 rounded-full flex items-center justify-center"><span class="placeholder-label text-[7px]">icon</span></div>
+          <div class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-xs font-semibold">+7</div>
+        </div>
+        <a href="#" class="text-xs font-semibold mt-3 inline-block hover:underline">View All Collections →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THE JOURNEY -->
+<section class="px-8 py-10 max-w-5xl mx-auto">
+  <h2 class="font-display text-2xl tracking-wide mb-1">THE JOURNEY</h2>
+  <p class="text-sm text-white/60 mb-6">From eligibility to the game, and then to your rewards.</p>
+  <div class="grid md:grid-cols-3 gap-4">
+    <div class="border border-line rounded-xl p-5 flex gap-4 items-start">
+      <div class="w-9 h-9 rounded-full border border-crimson text-crimson flex items-center justify-center font-mono text-sm shrink-0">01</div>
+      <div><div class="font-semibold mb-1">Verify</div><p class="text-sm text-white/60">Connect wallet &amp; check partner NFTs.</p></div>
+    </div>
+    <div class="border border-line rounded-xl p-5 flex gap-4 items-start">
+      <div class="w-9 h-9 rounded-full border border-crimson text-crimson flex items-center justify-center font-mono text-sm shrink-0">02</div>
+      <div><div class="font-semibold mb-1">Play</div><p class="text-sm text-white/60">Complete the game and defeat the boss.</p></div>
+    </div>
+    <div class="border border-line rounded-xl p-5 flex gap-4 items-start">
+      <div class="w-9 h-9 rounded-full border border-crimson text-crimson flex items-center justify-center font-mono text-sm shrink-0">03</div>
+      <div><div class="font-semibold mb-1">Claim</div><p class="text-sm text-white/60">Access ticket sale &amp; token presale.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 STAGES -->
+<section class="px-8 py-10 max-w-5xl mx-auto">
+  <h2 class="font-display text-2xl tracking-wide mb-1">6 STAGES. GREATER CHALLENGES.</h2>
+  <p class="text-sm text-white/60 mb-6">Each stage brings new worlds, higher difficulty, and greater rewards. Only Stage 1 is currently accessible.</p>
+  <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+    <!-- Stage 1 : unlocked -->
+    <div class="rounded-xl overflow-hidden border border-crimson">
+      <div class="placeholder h-24 flex items-center justify-center"><span class="placeholder-label text-[9px] text-center">ICON<br>stage 1 art</span></div>
+      <div class="p-3 bg-panel">
+        <div class="text-[10px] font-mono text-parchmentDim">STAGE 1</div>
+        <div class="text-sm font-semibold mb-2">The Fallen Shrine</div>
+        <div class="text-[10px] font-mono bg-crimson text-white text-center py-1 rounded">PLAY NOW</div>
+      </div>
+    </div>
+    <div class="rounded-xl overflow-hidden border border-line opacity-70">
+      <div class="placeholder h-24 flex items-center justify-center relative"><span class="placeholder-label text-[9px] text-center">ICON<br>stage 2 art</span><span class="absolute top-1.5 right-1.5">🔒</span></div>
+      <div class="p-3 bg-panel"><div class="text-[10px] font-mono text-parchmentDim">STAGE 2</div><div class="text-sm font-semibold mb-2">The Bamboo Vale</div><div class="text-[10px] font-mono bg-white/10 text-center py-1 rounded">COMING SOON</div></div>
+    </div>
+    <div class="rounded-xl overflow-hidden border border-line opacity-70">
+      <div class="placeholder h-24 flex items-center justify-center relative"><span class="placeholder-label text-[9px] text-center">ICON<br>stage 3 art</span><span class="absolute top-1.5 right-1.5">🔒</span></div>
+      <div class="p-3 bg-panel"><div class="text-[10px] font-mono text-parchmentDim">STAGE 3</div><div class="text-sm font-semibold mb-2">The Crimson Fort</div><div class="text-[10px] font-mono bg-white/10 text-center py-1 rounded">COMING SOON</div></div>
+    </div>
+    <div class="rounded-xl overflow-hidden border border-line opacity-70">
+      <div class="placeholder h-24 flex items-center justify-center relative"><span class="placeholder-label text-[9px] text-center">ICON<br>stage 4 art</span><span class="absolute top-1.5 right-1.5">🔒</span></div>
+      <div class="p-3 bg-panel"><div class="text-[10px] font-mono text-parchmentDim">STAGE 4</div><div class="text-sm font-semibold mb-2">The Sky Palace</div><div class="text-[10px] font-mono bg-white/10 text-center py-1 rounded">COMING SOON</div></div>
+    </div>
+    <div class="rounded-xl overflow-hidden border border-line opacity-70">
+      <div class="placeholder h-24 flex items-center justify-center relative"><span class="placeholder-label text-[9px] text-center">ICON<br>stage 5 art</span><span class="absolute top-1.5 right-1.5">🔒</span></div>
+      <div class="p-3 bg-panel"><div class="text-[10px] font-mono text-parchmentDim">STAGE 5</div><div class="text-sm font-semibold mb-2">The Spirit Realm</div><div class="text-[10px] font-mono bg-white/10 text-center py-1 rounded">COMING SOON</div></div>
+    </div>
+    <div class="rounded-xl overflow-hidden border border-line opacity-70">
+      <div class="placeholder h-24 flex items-center justify-center relative"><span class="placeholder-label text-[9px] text-center">ICON<br>stage 6 art</span><span class="absolute top-1.5 right-1.5">🔒</span></div>
+      <div class="p-3 bg-panel"><div class="text-[10px] font-mono text-parchmentDim">STAGE 6</div><div class="text-sm font-semibold mb-2">The Final Trial</div><div class="text-[10px] font-mono bg-white/10 text-center py-1 rounded">COMING SOON</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- TRAILER BANNER -->
+<section class="px-8 py-10 max-w-5xl mx-auto">
+  <div class="bg-panel border border-line rounded-2xl p-6 flex items-center justify-between gap-6 flex-wrap">
+    <div class="flex items-center gap-5">
+      <div class="placeholder w-16 h-16 rounded-full flex items-center justify-center shrink-0"><span class="placeholder-label text-[8px] text-center">ICON<br>play btn</span></div>
+      <div>
+        <div class="font-display text-xl tracking-wide">DISCOVER THE WORLD</div>
+        <p class="text-sm text-white/60">Watch the full teaser and explore what's coming.</p>
+      </div>
+    </div>
+    <button class="bg-crimson hover:bg-crimsonLight transition text-sm font-semibold px-6 py-3 rounded-md whitespace-nowrap">Watch Trailer</button>
+  </div>
+</section>
+
+<script>
+  const SITE_NAME = "ZecZuki"; // placeholder pattern carried over : one-line swap if renaming
+</script>
+</body>
+</html>

@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KamiZuki : Dark Japanese Fantasy Web3 Game Ecosystem</title>
+  <meta name="description" content="KamiZuki is a Japanese-themed Web3 play-to-earn platformer adventure game set in a fantasy world of gods, samurai, and spirits. Prove NFT eligibility, complete Stage 1 trial, and unlock ticket allocation & token presale." />
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- Particle Effect Canvas Overlay -->
+  <canvas id="sakura-canvas"></canvas>
+
+  <!-- ==========================================
+       HEADER / NAVIGATION
+       ========================================== -->
+  <header class="header-nav">
+    <div class="header-container">
+      <a href="#" class="brand-logo" onclick="navigateToPage('page-home')">
+        <img src="assets/logo.png" class="brand-logo-img" alt="KamiZuki Logo" />
+      </a>
+
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="#" class="nav-link active" data-target="page-home">Home</a></li>
+          <li><a href="#" class="nav-link" data-target="page-game">Game <span class="nav-badge-locked">STAGE 1</span></a></li>
+          <li><a href="#roadmap-section" class="nav-link" onclick="navigateToPage('page-home');">Roadmap</a></li>
+          <li><a href="#collection-section" class="nav-link" onclick="navigateToPage('page-home');">Collection</a></li>
+          <li><a href="#tokenomics-section" class="nav-link" onclick="navigateToPage('page-home');">Token</a></li>
+          <li><a href="#" class="nav-link" data-target="page-tickets">Tickets <span class="nav-badge-locked">🔒</span></a></li>
+        </ul>
+      </nav>
+
+      <div class="header-actions">
+        <button class="btn btn-crimson connect-wallet-trigger" onclick="openModal('wallet-modal')">
+          <img src="assets/icons/chibi_wallet.png" class="btn-icon-img" alt="Wallet" /> Connect Wallet
+        </button>
+
+        <div id="wallet-connected-pill" class="wallet-pill" style="display: none;">
+          <span class="pulse-dot"></span>
+          <span id="connected-wallet-addr" class="font-mono text-sm">0x71C...3F9</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==========================================
+       PAGE 1 : HOME / NFT ELIGIBILITY VIEW
+       ========================================== -->
+  <main id="page-home" class="page-view active">
+    <div class="page-section">
+      
+      <!-- HERO SECTION -->
+      <div class="hero-wrapper">
+        <img src="assets/hero_bg.jpg" class="hero-bg-img" alt="KamiZuki Dark Japanese Fantasy Scene" />
+        <div class="hero-overlay"></div>
+
+        <div class="hero-content">
+          <img src="assets/logo.png" class="hero-logo-img" alt="KamiZuki Logo" />
+          <p class="hero-tagline">
+            A play-to-earn adventure in a world of gods, samurai and spirits.
+          </p>
+
+          <div class="hero-ctas">
+            <button class="btn btn-crimson connect-wallet-trigger" onclick="openModal('wallet-modal')">
+              <img src="assets/icons/chibi_wallet.png" class="btn-icon-img" alt="Wallet" /> Connect Wallet
+            </button>
+            <button class="btn btn-outline" onclick="openModal('trailer-modal')">
+              <img src="assets/icons/badge_play_button.png" class="btn-icon-img" alt="Play" /> Watch Trailer ▶
+            </button>
+          </div>
+        </div>
+
+        <div class="hero-kanji-column">
+          <span>神に挑め</span><br/>PLAY / PROVE / EARN
+        </div>
+      </div>
+
+      <!-- STATS BAR -->
+      <div class="stats-bar">
+        <div class="stat-item">
+          <div class="stat-val">555</div>
+          <div class="stat-label">Total NFTs</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val">6</div>
+          <div class="stat-label">Game Stages</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val">1</div>
+          <div class="stat-label">Stage Live</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val">2</div>
+          <div class="stat-label">Ways to Earn (NFT + Token)</div>
+        </div>
+      </div>
+
+      <!-- NFT ELIGIBILITY SECTION (PARCHMENT CARD INK & PAPER) -->
+      <section class="parchment-card">
+        <div class="parchment-kanji-stamp">参加条件</div>
+        <div class="parchment-header">
+          <h2 class="parchment-title">CHECK YOUR NFT ELIGIBILITY</h2>
+          <p class="parchment-desc">
+            Hold an NFT from any of our partner collections below to unlock the game and start your journey.
+          </p>
+        </div>
+
+        <div id="eligibility-status-box" class="eligibility-inner-box">
+          <!-- Dynamically populated by JS web3-provider -->
+          <div>
+            <div class="eligibility-status-title">Connect your wallet</div>
+            <p class="eligibility-status-text">Verify your NFT holdings to see if you're eligible for the KamiZuki trial.</p>
+            <button class="btn btn-crimson connect-wallet-trigger" onclick="openModal('wallet-modal')">
+              <img src="assets/icons/chibi_wallet.png" class="btn-icon-img" alt="Wallet" /> Connect Wallet
+            </button>
+          </div>
+
+          <div class="collections-preview">
+            <div class="collections-label">SUPPORTED COLLECTIONS</div>
+            <div class="collections-avatars">
+              <img src="assets/icons/badge_02.png" class="col-avatar" title="KamiZuki Pass" alt="Partner 1" />
+              <img src="assets/icons/badge_03.png" class="col-avatar" title="Azuki" alt="Partner 2" />
+              <img src="assets/icons/badge_08.png" class="col-avatar" title="CyberKongz" alt="Partner 3" />
+              <img src="assets/icons/badge_09.png" class="col-avatar" title="Doodles" alt="Partner 4" />
+              <div class="col-avatar-more">+7</div>
+            </div>
+            <a href="#supported-collections" class="col-link" onclick="openModal('wallet-modal')">View All Collections →</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- JAPANESE SECTION DIVIDER -->
+      <div class="japanese-divider">
+        <img src="assets/icons/clean_divider.png" alt="Japanese Divider" />
+      </div>
+
+      <!-- THE JOURNEY (PROGRESSION) -->
+      <section class="section-header">
+        <h2 class="section-title">THE JOURNEY</h2>
+        <p class="section-subtitle">From eligibility to the game, and then to your rewards.</p>
+      </section>
+
+      <div class="journey-grid">
+        <div class="journey-card">
+          <img src="assets/icons/badge_03.png" class="badge-icon-img" alt="Verify" />
+          <div>
+            <div class="journey-card-title">01 : VERIFY</div>
+            <p class="journey-card-desc">Connect wallet & check partner NFTs holdings.</p>
+          </div>
+        </div>
+
+        <div class="journey-card">
+          <img src="assets/icons/badge_04.png" class="badge-icon-img" alt="Play" />
+          <div>
+            <div class="journey-card-title">02 : PLAY</div>
+            <p class="journey-card-desc">Complete the game and defeat the final boss.</p>
+          </div>
+        </div>
+
+        <div class="journey-card">
+          <img src="assets/icons/badge_05.png" class="badge-icon-img" alt="Claim" />
+          <div>
+            <div class="journey-card-title">03 : CLAIM</div>
+            <p class="journey-card-desc">Access ticket sale & token presale ecosystem.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6 STAGE SYSTEM GRID -->
+      <section class="section-header">
+        <h2 class="section-title">6 STAGES. GREATER CHALLENGES.</h2>
+        <p class="section-subtitle">Each stage brings new worlds, higher difficulty, and greater rewards. Only Stage 1 is currently accessible.</p>
+      </section>
+
+      <div class="stages-grid">
+        <!-- Stage 1 -->
+        <div class="stage-card unlocked">
+          <div class="stage-img-wrapper">
+            <img src="assets/hero_bg.jpg" class="stage-img" alt="Stage 1 - The Fallen Shrine" />
+          </div>
+          <div class="stage-info">
+            <div class="stage-num-tag">STAGE 1</div>
+            <div class="stage-name">The Fallen Shrine</div>
+            <div id="stage1-action-btn" class="stage-status-btn stage-btn-active" onclick="navigateToPage('page-game')">PLAY NOW</div>
+          </div>
+        </div>
+
+        <!-- Stage 2 -->
+        <div class="stage-card locked">
+          <div class="stage-img-wrapper">
+            <img src="assets/stage2.jpg" class="stage-img" alt="Stage 2 - The Bamboo Vale" />
+            <div class="stage-lock-badge">🔒</div>
+          </div>
+          <div class="stage-info">
+            <div class="stage-num-tag">STAGE 2</div>
+            <div class="stage-name">The Bamboo Vale</div>
+            <div class="stage-status-btn stage-btn-locked">COMING SOON</div>
+          </div>
+        </div>
+
+        <!-- Stage 3 -->
+        <div class="stage-card locked">
+          <div class="stage-img-wrapper">
+            <img src="assets/stage3.jpg" class="stage-img" alt="Stage 3 - The Crimson Fort" />
+            <div class="stage-lock-badge">🔒</div>
+          </div>
+          <div class="stage-info">
+            <div class="stage-num-tag">STAGE 3</div>
+            <div class="stage-name">The Crimson Fort</div>
+            <div class="stage-status-btn stage-btn-locked">COMING SOON</div>
+          </div>
+        </div>
+
+        <!-- Stage 4 -->
+        <div class="stage-card locked">
+          <div class="stage-img-wrapper">
+            <img src="assets/stage4.jpg" class="stage-img" alt="Stage 4 - The Sky Palace" />
+            <div class="stage-lock-badge">🔒</div>
+          </div>
+          <div class="stage-info">
+            <div class="stage-num-tag">STAGE 4</div>
+            <div class="stage-name">The Sky Palace</div>
+            <div class="stage-status-btn stage-btn-locked">COMING SOON</div>
+          </div>
+        </div>
+
+        <!-- Stage 5 -->
+        <div class="stage-card locked">
+          <div class="stage-img-wrapper">
+            <img src="assets/stage5.jpg" class="stage-img" alt="Stage 5 - The Spirit Realm" />
+            <div class="stage-lock-badge">🔒</div>
+          </div>
+          <div class="stage-info">
+            <div class="stage-num-tag">STAGE 5</div>
+            <div class="stage-name">The Spirit Realm</div>
+            <div class="stage-status-btn stage-btn-locked">COMING SOON</div>
+          </div>
+        </div>
+
+        <!-- Stage 6 -->
+        <div class="stage-card locked">
+          <div class="stage-img-wrapper">
+            <img src="assets/stage6.jpg" class="stage-img" alt="Stage 6 - The Final Trial" />
+            <div class="stage-lock-badge">🔒</div>
+          </div>
+          <div class="stage-info">
+            <div class="stage-num-tag">STAGE 6</div>
+            <div class="stage-name">The Final Trial</div>
+            <div class="stage-status-btn stage-btn-locked">COMING SOON</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRAILER BANNER -->
+      <div class="trailer-banner">
+        <div class="trailer-banner-info">
+          <img src="assets/icons/badge_13.png" class="badge-icon-img" style="width: 64px; height: 64px;" alt="Play" />
+          <div>
+            <div class="font-display text-xl">DISCOVER THE WORLD</div>
+            <p class="text-sm text-parchment-dim">Watch the full teaser and explore what's coming.</p>
+          </div>
+        </div>
+        <button class="btn btn-crimson" onclick="openModal('trailer-modal')">Watch Trailer</button>
+      </div>
+
+      <!-- KAMIZUKI COLLECTION SECTION -->
+      <section id="collection-section" class="section-header" style="margin-top: 4rem;">
+        <h2 class="section-title">KAMIZUKI NFT COLLECTION</h2>
+        <p class="section-subtitle">555 total genesis samurai spirit NFTs. Non-tradable initially during presale.</p>
+      </section>
+
+      <div class="stages-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+        <div class="stage-card">
+          <div class="stage-img-wrapper" style="height: 180px;">
+            <img src="assets/hero_bg.jpg" class="stage-img" alt="Genesis NFT #001" />
+          </div>
+          <div class="stage-info">
+            <div class="stage-num-tag">GENESIS PASS</div>
+            <div class="stage-name">KamiZuki Founder #001</div>
+            <div class="stage-status-btn stage-btn-locked">55 RESERVED (TEAM)</div>
+          </div>
+        </div>
+
+        <div class="stage-card">
+          <div class="stage-img-wrapper" style="height: 180px;">
+            <img src="assets/stage3.jpg" class="stage-img" alt="In-Game Presale #200" />
+          </div>
+          <div class="stage-info">
+            <div class="stage-num-tag">GAME PRESALE</div>
+            <div class="stage-name">Warrior Spirit #200</div>
+            <div class="stage-status-btn stage-btn-active" onclick="navigateToPage('page-tickets')">200 PRESALE ALLOCATION</div>
+          </div>
+        </div>
+
+        <div class="stage-card">
+          <div class="stage-img-wrapper" style="height: 180px;">
+            <img src="assets/stage5.jpg" class="stage-img" alt="Public Tickets #300" />
+          </div>
+          <div class="stage-info">
+            <div class="stage-num-tag">PUBLIC TICKETS</div>
+            <div class="stage-name">Spirit Samurai #300</div>
+            <div class="stage-status-btn stage-btn-active" onclick="navigateToPage('page-tickets')">300 PUBLIC RAFFLE</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROADMAP SECTION -->
+      <section id="roadmap-section" class="section-header" style="margin-top: 4rem;">
+        <h2 class="section-title">PROJECT ROADMAP</h2>
+        <p class="section-subtitle">Japanese chapter scroll progression. Dates and final mechanics are TBD.</p>
+      </section>
+
+      <div class="journey-grid">
+        <div class="journey-card">
+          <div class="hanko-seal-lg">一</div>
+          <div>
+            <div class="journey-card-title">第一章 : PHASE 1</div>
+            <p class="journey-card-desc">Website Launch & Stage 1 Fallen Shrine trial playable for verified partner NFT holders.</p>
+          </div>
+        </div>
+
+        <div class="journey-card">
+          <div class="hanko-seal-lg">二</div>
+          <div>
+            <div class="journey-card-title">第二章 : PHASE 2</div>
+            <p class="journey-card-desc">NFT Ticket Sale & Raffle Distribution for 555 KamiZuki Genesis Collection.</p>
+          </div>
+        </div>
+
+        <div class="journey-card">
+          <div class="hanko-seal-lg">三</div>
+          <div>
+            <div class="journey-card-title">第三章 : PHASE 3</div>
+            <p class="journey-card-desc">Token Presale event & Stage 2-3 game expansion release.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOKENOMICS PREVIEW SECTION -->
+      <section id="tokenomics-section" class="section-header" style="margin-top: 4rem;">
+        <h2 class="section-title">TOKENOMICS PREVIEW</h2>
+        <p class="section-subtitle">Conceptual ecosystem token breakdown. Numerical parameters are currently TBD.</p>
+      </section>
+
+      <div class="tokenomics-grid">
+        <div class="tok-card">
+          <img src="assets/icons/badge_06.png" class="tok-card-icon" alt="Total Supply" />
+          <div class="tok-card-title">Total Supply</div>
+          <div class="tok-card-val">TBD</div>
+        </div>
+        <div class="tok-card">
+          <img src="assets/icons/badge_07.png" class="tok-card-icon" alt="Presale Allocation" />
+          <div class="tok-card-title">Presale Allocation</div>
+          <div class="tok-card-val">TBD</div>
+        </div>
+        <div class="tok-card">
+          <img src="assets/icons/chibi_token.png" class="tok-card-icon" alt="Game Economy" />
+          <div class="tok-card-title">Game Economy</div>
+          <div class="tok-card-val">UTILITY</div>
+        </div>
+        <div class="tok-card">
+          <img src="assets/icons/badge_15.png" class="tok-card-icon" alt="Rewards" />
+          <div class="tok-card-title">Play-to-Earn</div>
+          <div class="tok-card-val">REWARDS</div>
+        </div>
+        <div class="tok-card">
+          <img src="assets/icons/badge_21.png" class="tok-card-icon" alt="Governance" />
+          <div class="tok-card-title">Governance</div>
+          <div class="tok-card-val">COMMUNITY</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ==========================================
+       PAGE 2 : GAME (STAGE 1: THE FALLEN SHRINE)
+       ========================================== -->
+  <main id="page-game" class="page-view">
+    <div class="page-section">
+      
+      <!-- GAME HEADER -->
+      <div class="game-header">
+        <div class="game-title-group">
+          <h1>
+            <span class="hanko-seal-lg">神月</span> STAGE 1 : THE FALLEN SHRINE
+          </h1>
+          <p class="text-sm text-parchment-dim">
+            Your first trial. Test your skill, defeat the boss, and unlock your allocation.
+          </p>
+        </div>
+
+        <div>
+          <button id="btn-simulate-boss-defeat" class="btn btn-outline">
+            ⚡ Quick Test: Defeat Boss
+          </button>
+        </div>
+      </div>
+
+      <!-- MAIN GAME CANVAS CONTAINER -->
+      <div class="game-viewport-card">
+        <div class="game-toolbar">
+          <div class="game-stat-item">
+            <img src="assets/icons/badge_hearts_health.png" style="width: 18px;" alt="Health" />
+            <span>HP: <strong class="text-crimson">100 / 100</strong></span>
+          </div>
+
+          <div class="game-stat-item">
+            <img src="assets/icons/badge_swords.png" style="width: 18px;" alt="Controls" />
+            <span>Controls: <strong>A / D (Move) | Space (Jump) | J (Slash)</strong></span>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" onclick="window.gameEngine.reset()">
+              <img src="assets/icons/chibi_refresh.png" class="btn-icon-img" alt="Reset" /> Restart Stage
+            </button>
+          </div>
+        </div>
+
+        <div class="game-canvas-wrapper">
+          <canvas id="game-canvas"></canvas>
+        </div>
+
+        <!-- Mobile Touch Controls -->
+        <div class="mobile-controls-bar">
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="touch-btn" ontouchstart="window.gameEngine.keys.left=true" ontouchend="window.gameEngine.keys.left=false">◀</button>
+            <button class="touch-btn" ontouchstart="window.gameEngine.keys.right=true" ontouchend="window.gameEngine.keys.right=false">▶</button>
+          </div>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="touch-btn touch-btn-action" ontouchstart="window.gameEngine.keys.up=true" ontouchend="window.gameEngine.keys.up=false">JUMP</button>
+            <button class="touch-btn touch-btn-action" ontouchstart="window.gameEngine.keys.attack=true" ontouchend="window.gameEngine.keys.attack=false">SLASH</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STAGE DETAILS & OBJECTIVES -->
+      <div class="game-details-grid">
+        <div class="detail-box">
+          <div class="detail-box-title">
+            <img src="assets/icons/badge_07.png" class="badge-icon-img" style="width: 38px; height: 38px;" alt="Torii" /> STAGE OBJECTIVE
+          </div>
+          <ul class="detail-box-list">
+            <li>Navigate across the Fallen Shrine platforms.</li>
+            <li>Collect spirit orbs along the path.</li>
+            <li>Defeat Aka-Oni (Final Stage 1 Boss) to complete the trial.</li>
+          </ul>
+        </div>
+
+        <div class="detail-box">
+          <div class="detail-box-title">
+            <img src="assets/icons/badge_15.png" class="badge-icon-img" style="width: 38px; height: 38px;" alt="Gift" /> STAGE REWARDS
+          </div>
+          <ul class="detail-box-list">
+            <li>Unlock Stage 3 (Claim Page).</li>
+            <li>Early access to NFT Ticket Sale.</li>
+            <li>Priority raffle entry in KamiZuki NFT distribution.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- JAPANESE SECTION DIVIDER -->
+      <div class="japanese-divider">
+        <img src="assets/icons/clean_divider.png" alt="Japanese Divider" />
+      </div>
+
+      <!-- PARCHMENT STORY BANNER (INK & PAPER) -->
+      <div class="parchment-card" style="margin-top: 3rem; padding-left: 5.5rem;">
+        <div class="parchment-kanji-stamp" style="left: 1.75rem; top: 2rem;">物語は続く</div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 2rem; flex-wrap: wrap; position: relative; z-index: 2;">
+          <div>
+            <h2 class="parchment-title" style="font-size: 1.85rem; margin-bottom: 0.3rem;">THE STORY CONTINUES</h2>
+            <p class="parchment-desc">New worlds. Stronger enemies. Greater rewards. Be ready for what's next.</p>
+          </div>
+          <button class="btn btn-crimson" onclick="navigateToPage('page-home')">View Roadmap</button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ==========================================
+       PAGE 3 : TICKETS + TOKEN PRESALE VIEW
+       ========================================== -->
+  <main id="page-tickets" class="page-view">
+    <div class="page-section">
+      
+      <!-- HEADER -->
+      <div style="text-align: center; max-width: 700px; margin: 0 auto 2.5rem auto;">
+        <div class="font-mono text-xs text-crimson tracking-widest mb-2">STAGE 3 UNLOCKED</div>
+        <h1 class="font-display text-4xl mb-3">
+          <span class="hanko-seal-lg">義像</span> CLAIM YOUR CHANCE
+        </h1>
+        <p class="text-sm text-parchment-dim">
+          You've proven yourself. Now get your tickets and be part of the KamiZuki ecosystem. You can also join the token presale.
+        </p>
+      </div>
+
+      <!-- PROGRESS JOURNEY TRACKER -->
+      <div class="progress-journey-tracker">
+        <div id="tracker-step-1" class="tracker-step completed">
+          <div class="tracker-step-num">01</div>
+          <span>Eligible NFT ✓</span>
+        </div>
+        <div class="tracker-line"></div>
+        <div id="tracker-step-2" class="tracker-step completed">
+          <div class="tracker-step-num">02</div>
+          <span>Game Completed ✓</span>
+        </div>
+        <div class="tracker-line"></div>
+        <div id="tracker-step-3" class="tracker-step active">
+          <div class="tracker-step-num">03</div>
+          <span>Access Unlocked</span>
+        </div>
+      </div>
+
+      <!-- TABS SWITCHER -->
+      <div class="tabs-switcher">
+        <button class="tab-btn active" data-tab="nft-tickets">NFT TICKETS</button>
+        <button class="tab-btn" data-tab="token-presale">TOKEN PRESALE</button>
+      </div>
+
+      <!-- TAB 1: NFT TICKETS -->
+      <div id="tab-nft-tickets" class="tab-content active">
+        <div class="ticket-sale-grid">
+          <!-- Purchase Widget -->
+          <div class="ticket-card">
+            <span class="ticket-badge-live">● PRESALE LIVE</span>
+            <h3 class="font-heading text-xl mb-2">NFT TICKET SALE</h3>
+            <p class="text-sm text-parchment-dim mb-4">
+              Enter the raffle for the KamiZuki NFT collection. Purchase tickets to increase your chances. The more tickets you get, the higher your chances.
+            </p>
+
+            <div class="ticket-counter-group">
+              <span class="text-sm">Number of Tickets:</span>
+              <button id="btn-ticket-minus" class="counter-btn">-</button>
+              <span id="ticket-count-input" class="counter-val">1</span>
+              <button id="btn-ticket-plus" class="counter-btn">+</button>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;" class="font-mono text-xs text-parchment-dim">
+              Estimated Cost: <strong class="text-white">TBD ETH</strong>
+            </div>
+
+            <button id="btn-purchase-tickets" class="btn btn-crimson" style="width: 100%;">
+              <img src="assets/icons/badge_ticket.png" class="btn-icon-img" alt="Ticket" /> Purchase Tickets
+            </button>
+
+            <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 8px;" class="font-mono text-xs">
+              Your Registered Tickets: <strong id="user-tickets-owned" class="text-crimson">0</strong><br/>
+              Raffle Chance Boost: <strong class="text-gold">Active</strong>
+            </div>
+          </div>
+
+          <!-- Total NFTs Breakdown -->
+          <div class="ticket-card">
+            <h3 class="font-heading text-xl mb-1">TOTAL NFTs</h3>
+            <div class="font-display text-4xl text-crimson mb-4">555</div>
+
+            <div class="supply-breakdown-list">
+              <div class="supply-item">
+                <span>Founder & Team</span>
+                <strong class="font-mono">55</strong>
+              </div>
+              <div class="supply-item">
+                <span>In-game Presale</span>
+                <strong class="font-mono">200</strong>
+              </div>
+              <div class="supply-item">
+                <span>Public (Tickets)</span>
+                <strong class="font-mono">300</strong>
+              </div>
+            </div>
+
+            <div style="margin-top: 1.5rem; background: rgba(200,28,46,0.1); border: 1px solid var(--border-crimson); padding: 1rem; border-radius: 8px;">
+              <div class="font-heading text-sm text-crimson mb-1">SALE PHASE: Presale Active</div>
+              <p class="text-xs text-parchment-dim">
+                Early access for game participants at a lower price. Public sale opens later on a first-come, first-served basis.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- HOW IT WORKS -->
+        <section class="section-header">
+          <h2 class="section-title">HOW IT WORKS</h2>
+        </section>
+
+        <div class="how-it-works-flow">
+          <div class="flow-step-card">
+            <img src="assets/icons/badge_18.png" class="badge-icon-img" style="margin: 0 auto 0.75rem auto;" alt="Step 1" />
+            <div class="font-heading text-base font-bold mb-1">1. Buy Tickets</div>
+            <p class="text-xs text-parchment-dim">Purchase as many tickets as you want to boost odds.</p>
+          </div>
+
+          <div class="flow-step-card">
+            <img src="assets/icons/badge_05.png" class="badge-icon-img" style="margin: 0 auto 0.75rem auto;" alt="Step 2" />
+            <div class="font-heading text-base font-bold mb-1">2. Enter Raffle</div>
+            <p class="text-xs text-parchment-dim">All ticket holders enter the NFT distribution.</p>
+          </div>
+
+          <div class="flow-step-card">
+            <img src="assets/icons/badge_20.png" class="badge-icon-img" style="margin: 0 auto 0.75rem auto;" alt="Step 3" />
+            <div class="font-heading text-base font-bold mb-1">3. Winners Selected</div>
+            <p class="text-xs text-parchment-dim">Winners receive NFTs directly in their wallet.</p>
+          </div>
+
+          <div class="flow-step-card">
+            <img src="assets/icons/chibi_external.png" class="chibi-icon-img" style="margin: 0 auto 0.75rem auto;" alt="Step 4" />
+            <div class="font-heading text-base font-bold mb-1">4. Reveal & Trade</div>
+            <p class="text-xs text-parchment-dim">Initial non-tradable. Tradable after full release.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: TOKEN PRESALE -->
+      <div id="tab-token-presale" class="tab-content">
+        <div class="ticket-card" style="margin-bottom: 2rem; position: relative; overflow: hidden;">
+          <img src="assets/token_presale.jpg" style="position: absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity: 0.2; z-index:-1;" alt="Token Presale" />
+
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.5rem;">
+            <div>
+              <span class="ticket-badge-live" style="background: rgba(212,175,55,0.15); color: var(--gold); border-color: rgba(212,175,55,0.3);">
+                ● COMING SOON
+              </span>
+              <h2 class="font-display text-3xl mb-2">TOKEN PRESALE</h2>
+              <p class="text-sm text-parchment-dim max-w-lg mb-4">
+                Be part of the KamiZuki economy. Purchase tokens during the presale and get early access to future utilities, rewards and the game ecosystem.
+              </p>
+
+              <ul class="detail-box-list" style="margin-bottom: 1.5rem;">
+                <li>Early access to token presale</li>
+                <li>Use in game economy</li>
+                <li>Future rewards and utilities</li>
+                <li>Be part of the long-term vision</li>
+              </ul>
+            </div>
+
+            <div style="background: var(--bg-void); border: 1px solid var(--border-line); border-radius: 12px; padding: 1.5rem; width: 300px;">
+              <div class="font-mono text-xs text-parchment-dim mb-1">PRESALE DETAILS</div>
+              <div class="font-display text-2xl text-gold mb-3">Coming Soon</div>
+
+              <div class="font-mono text-xs text-parchment-dim mb-3">
+                Token Symbol: <strong>TBD</strong><br/>
+                Presale Price: <strong>TBD ETH</strong>
+              </div>
+
+              <button class="btn btn-outline" style="width: 100%;" onclick="showToast('Token Presale registration opens soon!', 'info')">
+                Presale Coming Soon
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- FULL TOKENOMICS SECTION -->
+        <section class="section-header">
+          <h2 class="section-title">TOKENOMICS BREAKDOWN</h2>
+        </section>
+
+        <div class="tokenomics-grid">
+          <div class="tok-card">
+            <img src="assets/icons/badge_06.png" class="tok-card-icon" alt="Supply" />
+            <div class="tok-card-title">Total Supply</div>
+            <div class="tok-card-val">TBD</div>
+          </div>
+          <div class="tok-card">
+            <img src="assets/icons/badge_07.png" class="tok-card-icon" alt="Presale" />
+            <div class="tok-card-title">Presale Allocation</div>
+            <div class="tok-card-val">TBD</div>
+          </div>
+          <div class="tok-card">
+            <img src="assets/icons/chibi_token.png" class="tok-card-icon" alt="Economy" />
+            <div class="tok-card-title">Game Economy</div>
+            <div class="tok-card-val">UTILITY</div>
+          </div>
+          <div class="tok-card">
+            <img src="assets/icons/badge_15.png" class="tok-card-icon" alt="Rewards" />
+            <div class="tok-card-title">Play-to-Earn</div>
+            <div class="tok-card-val">REWARDS</div>
+          </div>
+          <div class="tok-card">
+            <img src="assets/icons/badge_21.png" class="tok-card-icon" alt="Governance" />
+            <div class="tok-card-title">Governance</div>
+            <div class="tok-card-val">COMMUNITY</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ==========================================
+       MODAL 1: WEB3 WALLET SELECTION & SIMULATION
+       ========================================== -->
+  <div id="wallet-modal" class="modal-overlay">
+    <div class="modal-box">
+      <button class="modal-close-btn" onclick="closeModal('wallet-modal')">×</button>
+      
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+        <span class="hanko-seal">神月</span>
+        <h3 class="font-display text-xl">CONNECT WALLET</h3>
+      </div>
+      <p class="text-xs text-parchment-dim mb-4">
+        Connect your Ethereum wallet or select a simulation mode to test eligibility & game unlock.
+      </p>
+
+      <div class="wallet-options-list">
+        <!-- Real Web3 MetaMask -->
+        <button class="wallet-opt-btn" onclick="connectMockWallet(null)">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <img src="assets/icons/chibi_wallet.png" style="width: 24px;" alt="MetaMask" />
+            <span>MetaMask / Web3 Wallet</span>
+          </div>
+          <span class="text-xs text-parchment-dim">Ethereum Mainnet</span>
+        </button>
+
+        <!-- Test Option B: Eligible Wallet -->
+        <button class="wallet-opt-btn" onclick="connectMockWallet('eligible')">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <img src="assets/icons/badge_check.png" style="width: 24px;" alt="Check" />
+            <span>Simulate ELIGIBLE Wallet</span>
+          </div>
+          <span class="text-xs text-crimson font-bold">✓ Holds KamiZuki Pass</span>
+        </button>
+
+        <!-- Test Option C: Ineligible Wallet -->
+        <button class="wallet-opt-btn" onclick="connectMockWallet('ineligible')">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <img src="assets/icons/chibi_warning_error.png" style="width: 24px;" alt="Warning" />
+            <span>Simulate INELIGIBLE Wallet</span>
+          </div>
+          <span class="text-xs text-parchment-dim">0 Partner NFTs</span>
+        </button>
+
+        <!-- Test Option D: Wrong Network State -->
+        <button class="wallet-opt-btn" onclick="connectMockWallet('wrong_network')">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <img src="assets/icons/chibi_settings.png" style="width: 24px;" alt="Settings" />
+            <span>Test Wrong Network State</span>
+          </div>
+          <span class="text-xs text-parchment-dim">Error Simulation</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL 2: VIDEO TRAILER
+       ========================================== -->
+  <div id="trailer-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 800px; padding: 1rem;">
+      <button class="modal-close-btn" onclick="closeModal('trailer-modal')">×</button>
+      <div style="position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+        <img src="assets/hero_bg.jpg" style="width:100%; height:100%; object-fit:cover; opacity: 0.5;" alt="Trailer" />
+        <div style="position: absolute; text-align: center;">
+          <img src="assets/icons/badge_play_button.png" style="width: 64px; margin: 0 auto 1rem auto;" alt="Play" />
+          <div class="font-display text-2xl text-white">KAMIZUKI OFFICIAL TEASER</div>
+          <p class="text-sm text-parchment-dim mt-1">Dark Japanese Fantasy Platformer Adventure</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-logo"><img src="assets/logo.png" style="height: 38px; width: auto; object-fit: contain;" alt="KamiZuki Logo" /></div>
+    <div class="footer-copy">© 2026 KamiZuki Project. All rights reserved. Ethereum Blockchain Web3 Game.</div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script type="module" src="js/web3-provider.js"></script>
+  <script src="js/game-engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
