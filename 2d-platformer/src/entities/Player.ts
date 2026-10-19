@@ -1,0 +1,733 @@
+// src/entities/Player.ts
+import Phaser from 'phaser';
+import type { Facing } from '../types';
+import { SoundManager } from '../managers/SoundManager';
+import { BOSS_ANIM_KEYS } from './bossAnimationTokens';
+
+export class Player extends Phaser.Physics.Arcade.Sprite {
+    public cursors: Phaser.Types.Input.Keyboard.CursorKeys;
+    public spaceKey: Phaser.Input.Keyboard.Key;
+    public enterKey: Phaser.Input.Keyboard.Key;
+    public ctrlKey: Phaser.Input.Keyboard.Key;
+
+    // WASD Controls
+    public keyW!: Phaser.Input.Keyboard.Key;
+    public keyA!: Phaser.Input.Keyboard.Key;
+    public keyS!: Phaser.Input.Keyboard.Key;
+    public keyD!: Phaser.Input.Keyboard.Key;
+    public keyE!: Phaser.Input.Keyboard.Key;
+
+    public facing: Facing = 'right';
+    public canJump: boolean = true;
+    public isNormalJump: boolean = false;
+    public ignoreGroundJumpUntil: number = 0;
+    public isOnPlatform: boolean = false;
+    public isNearDoor: boolean = false;
+    public isTeleporting: boolean = false;
+    public isPassingThroughWell: boolean = false;
+
+    // States
+    public hasGun: boolean = false;
+    public hasTotem: boolean = false;
+    public isInvincible: boolean = false;
+    public isDying: boolean = false;
+    public isReviving: boolean = false;
+    private activeDeathSprite?: Phaser.GameObjects.Sprite;
+
+    // Spawns
+    public spawnX: number = 100;
+    public spawnY: number = 100;
+    public activeSpawnX: number = 100;
+    public activeSpawnY: number = 100;
+    public lastSafeX: number = 100;
+    public lastSafeY: number = 100;
+
+    public bullets: Phaser.Physics.Arcade.Group;
+    public soundManager?: SoundManager;
+
+    public shootRecoilUntil: number = 0;
+    public lastShootTime: number = 0;
+    public readonly shootCooldownMs: number = 250;
+    private lastMouseDown: boolean = false;
+    private lastCtrlDown: boolean = false;
+
+    // Key Lift on Respawn State (prevents held keys from triggering actions immediately on respawn)
+    private requireKeyLift = {
+        left: false,
+        right: false,
+        jump: false,
+        mouse: false,
+        ctrl: false
+    };
+
+    public getActiveKeys(): string[] {
+        const keys: string[] = [];
+        if (this.cursors.left?.isDown || this.keyA?.isDown) keys.push('LEFT');
+        if (this.cursors.right?.isDown || this.keyD?.isDown) keys.push('RIGHT');
+        if (this.cursors.up?.isDown || this.keyW?.isDown || this.spaceKey?.isDown) keys.push('JUMP');
+        if (this.ctrlKey?.isDown) keys.push('SHOOT');
+        if (this.keyE?.isDown) keys.push('ACTION');
+        return keys;
+    }
+
+    constructor(scene: Phaser.Scene, x: number, y: number, soundManager?: SoundManager) {
+        super(scene, x, y, 'idle-r');
+        this.soundManager = soundManager;
+        scene.add.existing(this);
+        scene.physics.add.existing(this);
+
+        this.setCollideWorldBounds(true);
+        this.setDepth(5);
+        this.setBodySize(14, 24);
+        this.setOffset(9, 8);
+        (this.body as Phaser.Physics.Arcade.Body).setMaxVelocity(10000, 10000);
+
+        this.cursors = scene.input.keyboard!.createCursorKeys();
+        this.spaceKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.enterKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+        this.ctrlKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL);
+
+        // Setup WASD
+        this.keyW = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+        this.keyA = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+        this.keyS = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+        this.keyD = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+        this.keyE = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+
+        this.bullets = scene.physics.add.group({ allowGravity: false });
+    }
+
+    public enforceKeyLift() {
+        const rawLeft = this.cursors.left.isDown || (this.keyA && this.keyA.isDown);
+        const rawRight = this.cursors.right.isDown || (this.keyD && this.keyD.isDown);
+        const rawJump = this.cursors.up.isDown || (this.keyW && this.keyW.isDown) || this.spaceKey.isDown;
+        const pointer = this.scene.input.activePointer;
+        const rawMouse = Boolean(pointer && pointer.leftButtonDown());
+        const rawCtrl = Boolean(this.ctrlKey && this.ctrlKey.isDown);
+
+        this.requireKeyLift.left = rawLeft;
+        this.requireKeyLift.right = rawRight;
+        this.requireKeyLift.jump = rawJump;
+        this.requireKeyLift.mouse = rawMouse;
+        this.requireKeyLift.ctrl = rawCtrl;
+        this.lastMouseDown = rawMouse;
+        this.lastCtrlDown = rawCtrl;
+    }
+
+    public stompBounce(bounceVelocity: number = -380) {
+        this.setVelocityY(bounceVelocity);
+        this.isNormalJump = false;
+        this.canJump = true;
+    }
+
+    public onTeleportComplete() {
+        this.isTeleporting = false;
+        this.setVelocity(0, 0);
+        const body = this.body as Phaser.Physics.Arcade.Body;
+        if (body) {
+            body.allowGravity = true;
+            body.setVelocity(0, 0);
+        }
+        this.updateAnimationState(true);
+    }
+
+    update() {
+        if (this.isDying || this.isTeleporting || this.isReviving) {
+            this.setVelocity(0, 0);
+            return;
+        }
+
+        const speed = 200, jumpSpeed = 400, shortHopCap = -150;
+        const body = this.body as Phaser.Physics.Arcade.Body;
+        const isGrounded = body.blocked.down || this.isOnPlatform;
+
+        this.setVelocityX(0);
+
+        const pointer = this.scene.input.activePointer;
+
+        // 1. Evaluate Key Lift Releases (once lifted, the key/click is unlocked)
+        const rawLeftDown = this.cursors.left.isDown || this.keyA.isDown;
+        const rawRightDown = this.cursors.right.isDown || this.keyD.isDown;
+        const rawJumpDown = this.cursors.up.isDown || this.keyW.isDown || this.spaceKey.isDown;
+        const rawMouseDown = Boolean(pointer && pointer.leftButtonDown());
+        const rawCtrlDown = Boolean(this.ctrlKey && this.ctrlKey.isDown);
+
+        if (!rawLeftDown) this.requireKeyLift.left = false;
+        if (!rawRightDown) this.requireKeyLift.right = false;
+        if (!rawJumpDown) this.requireKeyLift.jump = false;
+        if (!rawMouseDown) this.requireKeyLift.mouse = false;
+        if (!rawCtrlDown) this.requireKeyLift.ctrl = false;
+
+        // 2. Filter inputs through Key Lift guard
+        const isLeftDown = rawLeftDown && !this.requireKeyLift.left;
+        const isRightDown = rawRightDown && !this.requireKeyLift.right;
+        const isJumpDown = rawJumpDown && !this.requireKeyLift.jump;
+
+        if (isLeftDown) {
+            this.setVelocityX(-speed);
+            this.facing = 'left';
+        } else if (isRightDown) {
+            this.setVelocityX(speed);
+            this.facing = 'right';
+        }
+
+        if (isGrounded && !this.isInvincible) {
+            this.lastSafeX = this.x;
+            this.lastSafeY = this.y - 10;
+        }
+
+        if (isGrounded) {
+            if (isJumpDown && this.canJump && this.scene.time.now > this.ignoreGroundJumpUntil) {
+                this.setVelocityY(-jumpSpeed);
+                this.canJump = false;
+                this.isNormalJump = true;
+                this.soundManager?.playJump();
+            }
+        } else {
+            this.canJump = true;
+        }
+
+        // Variable Jump Height: releasing Space, Up, or W early cuts velocity into a short-hop
+        if (this.isNormalJump && !isJumpDown && body.velocity.y < shortHopCap) {
+            this.setVelocityY(shortHopCap);
+            this.isNormalJump = false;
+        }
+
+        // 3. Left Mouse Click or Left Ctrl shoots Blaster
+        const isMouseJustPressed = rawMouseDown && !this.lastMouseDown && !this.requireKeyLift.mouse;
+        const isCtrlJustPressed = rawCtrlDown && !this.lastCtrlDown && !this.requireKeyLift.ctrl;
+        this.lastMouseDown = rawMouseDown;
+        this.lastCtrlDown = rawCtrlDown;
+
+        if ((isMouseJustPressed || isCtrlJustPressed) && this.hasGun) {
+            this.shootBullet();
+        }
+
+        this.updateAnimationState(isGrounded);
+
+        // Reset per-frame platform evaluation
+        this.isOnPlatform = false;
+    }
+
+    private shootBullet() {
+        if (this.isDying || this.isTeleporting || this.isReviving || !this.hasGun) return;
+        const now = this.scene.time.now;
+        if (now - this.lastShootTime < this.shootCooldownMs) {
+            return;
+        }
+        this.lastShootTime = now;
+        (this.scene as any).inventoryManager?.onGunFired(Date.now(), this.shootCooldownMs);
+
+        const isRight = this.facing === 'right';
+        this.shootRecoilUntil = now + 160;
+        const spawnX = isRight ? this.x + 14 : this.x - 14;
+        const spawnY = this.y - 2;
+
+        const bullet = this.bullets.create(spawnX, spawnY, 'bullet-sprite') as Phaser.Physics.Arcade.Sprite;
+        bullet.setDepth(5);
+        bullet.setOrigin(0.5, 0.5);
+
+        const body = bullet.body as Phaser.Physics.Arcade.Body;
+        body.setSize(18, 14);
+        body.setOffset(7, 9);
+        body.allowGravity = false;
+
+        const animKey = isRight ? 'bullet-right-anim' : 'bullet-left-anim';
+        if (this.scene.anims.exists(animKey)) {
+            bullet.play(animKey);
+        } else if (this.scene.anims.exists('fire-bullet-anim')) {
+            bullet.play('fire-bullet-anim');
+        }
+
+        const bulletSpeed = 500;
+        const bulletLifespanMs = 800; // 500 px/s * 0.8s = 400px range
+
+        bullet.setVelocityX(isRight ? bulletSpeed : -bulletSpeed);
+        this.soundManager?.playShoot();
+
+        this.scene.time.delayedCall(bulletLifespanMs, () => {
+            if (bullet && bullet.active && bullet.scene) {
+                if (bullet.body) {
+                    bullet.body.enable = false;
+                    bullet.body.checkCollision.none = true;
+                }
+                bullet.setActive(false);
+                bullet.setVisible(false);
+                bullet.destroy();
+            }
+        });
+    }
+
+    private updateAnimationState(isGrounded: boolean) {
+        const body = this.body as Phaser.Physics.Arcade.Body;
+        const isMovingHorizontally = body.velocity.x !== 0;
+
+        if (!isGrounded) {
+            if (body.velocity.y < 0) {
+                // Jumping / Rising
+                if (this.hasGun) {
+                    const jumpAnimKey = this.facing === 'right' ? 'gun-jump-r-anim' : 'gun-jump-l-anim';
+                    if (this.scene.anims.exists(jumpAnimKey)) {
+                        if (this.anims.currentAnim?.key !== jumpAnimKey) {
+                            this.anims.play(jumpAnimKey);
+                        }
+                    } else {
+                        if (this.anims.isPlaying) this.anims.stop();
+                        const frame = this.facing === 'right' ? 2 : 1;
+                        if (this.texture.key !== 'player-jump' || this.frame.name !== String(frame)) {
+                            this.setTexture('player-jump', frame);
+                        }
+                    }
+                } else {
+                    if (this.anims.isPlaying) this.anims.stop();
+                    const frame = this.facing === 'right' ? 2 : 1;
+                    if (this.texture.key !== 'player-jump' || this.frame.name !== String(frame)) {
+                        this.setTexture('player-jump', frame);
+                    }
+                }
+            } else {
+                // Falling / Descending
+                if (this.hasGun) {
+                    const fallAnimKey = this.facing === 'right' ? 'gun-fall-r-anim' : 'gun-fall-l-anim';
+                    if (this.scene.anims.exists(fallAnimKey)) {
+                        if (!this.anims.isPlaying || this.anims.currentAnim?.key !== fallAnimKey) {
+                            this.anims.play(fallAnimKey, true);
+                        }
+                    } else {
+                        if (this.anims.isPlaying) this.anims.stop();
+                        const frame = this.facing === 'right' ? 3 : 0;
+                        if (this.texture.key !== 'player-fall' || this.frame.name !== String(frame)) {
+                            this.setTexture('player-fall', frame);
+                        }
+                    }
+                } else {
+                    const fallAnimKey = this.facing === 'right' ? 'fall-r-anim' : 'fall-l-anim';
+                    if (this.scene.anims.exists(fallAnimKey)) {
+                        if (!this.anims.isPlaying || this.anims.currentAnim?.key !== fallAnimKey) {
+                            this.anims.play(fallAnimKey, true);
+                        }
+                    } else {
+                        if (this.anims.isPlaying) this.anims.stop();
+                        const frame = this.facing === 'right' ? 3 : 0;
+                        if (this.texture.key !== 'player-fall' || this.frame.name !== String(frame)) {
+                            this.setTexture('player-fall', frame);
+                        }
+                    }
+                }
+            }
+            return;
+        }
+
+        if (isMovingHorizontally) {
+            if (this.hasGun) {
+                const key = this.facing === 'right' ? 'gun-walk-r-anim' : 'gun-walk-l-anim';
+                if (this.scene.anims.exists(key)) {
+                    if (!this.anims.isPlaying || this.anims.currentAnim?.key !== key) {
+                        this.anims.play(key, true);
+                    }
+                } else {
+                    const fallbackKey = this.facing === 'right' ? 'walk-r-anim' : 'walk-l-anim';
+                    if (!this.anims.isPlaying || this.anims.currentAnim?.key !== fallbackKey) {
+                        this.anims.play(fallbackKey, true);
+                    }
+                }
+            } else {
+                const key = this.facing === 'right' ? 'walk-r-anim' : 'walk-l-anim';
+                if (!this.anims.isPlaying || this.anims.currentAnim?.key !== key) {
+                    this.anims.play(key, true);
+                }
+            }
+        } else {
+            if (this.hasGun) {
+                const gunIdleKey = this.facing === 'right' ? 'gun-idle-r-anim' : 'gun-idle-l-anim';
+                if (this.scene.anims.exists(gunIdleKey)) {
+                    if (!this.anims.isPlaying || this.anims.currentAnim?.key !== gunIdleKey) {
+                        this.anims.play(gunIdleKey, true);
+                    }
+                } else {
+                    const fallbackTexture = this.facing === 'right' ? 'player-gun-idle-r' : 'player-gun-idle-l';
+                    if (this.anims.isPlaying) this.anims.stop();
+                    if (this.texture.key !== fallbackTexture) {
+                        this.setTexture(fallbackTexture, 0);
+                    }
+                }
+            } else {
+                const idleAnimKey = this.facing === 'right' ? 'idle-r-anim' : 'idle-l-anim';
+                if (this.scene.anims.exists(idleAnimKey)) {
+                    if (!this.anims.isPlaying || this.anims.currentAnim?.key !== idleAnimKey) {
+                        this.anims.play(idleAnimKey, true);
+                    }
+                } else {
+                    const key = this.facing === 'right' ? 'idle-r' : 'idle-l';
+                    if (this.anims.isPlaying) this.anims.stop();
+                    if (this.texture.key !== key) this.setTexture(key);
+                }
+            }
+        }
+    }
+
+    public disableGameInputs() {
+        const keys = [
+            this.keyW, this.keyA, this.keyS, this.keyD, this.keyE,
+            this.cursors.left, this.cursors.right, this.cursors.up, this.cursors.down,
+            this.spaceKey, this.enterKey, this.ctrlKey
+        ];
+        keys.forEach(k => {
+            if (k) {
+                k.enabled = false;
+                k.isDown = false;
+                k.isUp = true;
+                k.reset();
+            }
+        });
+        this.requireKeyLift.left = false;
+        this.requireKeyLift.right = false;
+        this.requireKeyLift.jump = false;
+        this.requireKeyLift.mouse = false;
+        this.requireKeyLift.ctrl = false;
+        this.lastMouseDown = false;
+        this.lastCtrlDown = false;
+    }
+
+    public enableGameInputs() {
+        const keys = [
+            this.keyW, this.keyA, this.keyS, this.keyD, this.keyE,
+            this.cursors.left, this.cursors.right, this.cursors.up, this.cursors.down,
+            this.spaceKey, this.enterKey, this.ctrlKey
+        ];
+        keys.forEach(k => {
+            if (k) {
+                k.enabled = true;
+                k.reset();
+            }
+        });
+        this.enforceKeyLift();
+    }
+
+    public cancelDeathEffect() {
+        this.isReviving = false;
+        if (this.activeDeathSprite && this.activeDeathSprite.active) {
+            this.scene.tweens.killTweensOf(this.activeDeathSprite);
+            this.activeDeathSprite.destroy();
+            this.activeDeathSprite = undefined;
+        }
+        this.isDying = false;
+        const body = this.body as Phaser.Physics.Arcade.Body;
+        if (body) {
+            body.setEnable(true);
+        }
+        this.setVisible(true);
+        this.setAlpha(1);
+        this.enableGameInputs();
+    }
+
+    public finishRespawn() {
+        this.isDying = false;
+        if (this.activeDeathSprite && this.activeDeathSprite.active) {
+            this.activeDeathSprite.destroy();
+            this.activeDeathSprite = undefined;
+        }
+
+        const body = this.body as Phaser.Physics.Arcade.Body;
+        if (body) {
+            body.setEnable(true);
+        }
+        this.setPosition(this.activeSpawnX, this.activeSpawnY);
+        this.setVelocity(0, 0);
+        this.setVisible(true);
+        this.setAlpha(1);
+        this.isReviving = false;
+
+        // Emit player-respawn first to restore all managers (inventory, collectibles, mobs, environment)
+        this.scene.events.emit('player-respawn');
+
+        const isBossPhase2 = Boolean(
+            (this.scene as any).eleckingBoss &&
+            ((this.scene as any).eleckingBoss.phase === 2 || (this.scene as any).eleckingBoss.hasReachedPhase2) &&
+            !(this.scene as any).eleckingBoss.isDead
+        );
+        if (isBossPhase2) {
+            this.hasGun = true;
+        }
+
+        const gunIdleKey = this.facing === 'right' ? 'gun-idle-r-anim' : 'gun-idle-l-anim';
+        const defaultIdleKey = this.facing === 'right' ? 'idle-r-anim' : 'idle-l-anim';
+        const chosenAnim = this.hasGun && this.scene.anims.exists(gunIdleKey) ? gunIdleKey : defaultIdleKey;
+
+        if (this.scene.anims.exists(chosenAnim)) {
+            this.anims.play(chosenAnim, true);
+        } else {
+            this.anims.stop();
+            this.setTexture(this.facing === 'right' ? 'idle-r' : 'idle-l');
+        }
+
+        if (this.hasGun && (this.scene as any).inventoryManager) {
+            (this.scene as any).inventoryManager.addGun();
+        }
+
+        this.isPassingThroughWell = false;
+        this.clearTint();
+        this.enableGameInputs();
+        this.soundManager?.playRespawn();
+    }
+
+    die(reason: 'default' | 'lava' | 'electric' | 'lightning' | string = 'default') {
+        if (this.isInvincible || this.isDying) return;
+
+        // If player has Totem Shield: absorb death with totem revive animation without resetting stage
+        if (this.hasTotem) {
+            this.hasTotem = false;
+            if ((this.scene as any).inventoryManager) {
+                (this.scene as any).inventoryManager.consumeTotem();
+            }
+            if ((this.scene as any).collectiblesManager) {
+                (this.scene as any).collectiblesManager.onTotemConsumed();
+            }
+            this.isInvincible = true;
+            this.isReviving = true;
+            this.disableGameInputs();
+            const reviveX = this.lastSafeX;
+            const reviveY = this.lastSafeY;
+            this.setPosition(reviveX, reviveY);
+            this.setVelocity(0, 0);
+            this.clearTint();
+            this.soundManager?.playDeath();
+
+            const isRight = this.facing === 'right';
+            const spriteKey = 'totem-revive';
+            const animKey = isRight ? 'totem-revive-r-anim' : 'totem-revive-l-anim';
+
+            if (this.scene.textures.exists(spriteKey)) {
+                this.setVisible(false);
+                const body = this.body as Phaser.Physics.Arcade.Body;
+                if (body) body.setEnable(false);
+
+                const reviveSprite = this.scene.add.sprite(reviveX, reviveY, spriteKey, isRight ? 0 : 32);
+                reviveSprite.setDepth(10);
+                reviveSprite.setOrigin(0.5, 0.5);
+                this.activeDeathSprite = reviveSprite;
+
+                let completed = false;
+                const finishRevival = () => {
+                    if (completed) return;
+                    completed = true;
+                    this.isReviving = false;
+                    if (reviveSprite.active) reviveSprite.destroy();
+                    if (this.activeDeathSprite === reviveSprite) this.activeDeathSprite = undefined;
+                    this.setVisible(true);
+                    if (body) body.setEnable(true);
+                    this.enableGameInputs();
+
+                    // Clean invincibility alpha flicker (no colored screen or sprite tint)
+                    this.scene.tweens.add({
+                        targets: this,
+                        alpha: 0.35,
+                        duration: 100,
+                        yoyo: true,
+                        repeat: 8,
+                        onComplete: () => {
+                            this.alpha = 1;
+                            this.isInvincible = false;
+                            this.clearTint();
+                        }
+                    });
+                };
+
+                if (this.scene.anims.exists(animKey)) {
+                    reviveSprite.play(animKey);
+                }
+
+                reviveSprite.once(Phaser.Animations.Events.ANIMATION_COMPLETE, finishRevival);
+                this.scene.time.delayedCall(850, finishRevival);
+            } else {
+                this.isReviving = false;
+                this.enableGameInputs();
+                // Clean invincibility alpha flicker fallback
+                this.scene.tweens.add({
+                    targets: this,
+                    alpha: 0.35,
+                    duration: 100,
+                    yoyo: true,
+                    repeat: 14,
+                    onComplete: () => {
+                        this.alpha = 1;
+                        this.isInvincible = false;
+                        this.clearTint();
+                    }
+                });
+            }
+            return;
+        }
+
+        // Full Death: play death effect sprite, then smoothly respawn at spawn point
+        this.isDying = true;
+        this.disableGameInputs();
+        const deathX = this.x;
+        const deathY = this.y;
+
+        this.setVelocity(0, 0);
+        const body = this.body as Phaser.Physics.Arcade.Body;
+        if (body) {
+            body.setEnable(false);
+        }
+        this.setVisible(false);
+        this.hasGun = false;
+        this.hasTotem = false;
+        if ((this.scene as any).inventoryManager) {
+            (this.scene as any).inventoryManager.consumeTotem();
+        }
+        this.clearTint();
+        this.soundManager?.playDeath();
+
+        // Emit death event for collectibles & mobs reset
+        this.scene.events.emit('player-death');
+
+        const isRight = this.facing === 'right';
+
+        // Requirement 1: use death by beam1.png to death by beam8.png for death effect when player dies to the beam attack
+        if (reason === 'beam' || reason === 'death-by-beam' || reason === 'boss-beam') {
+            const animKey = BOSS_ANIM_KEYS.DEATH_BY_BEAM;
+            const startFrameKey = 'boss-death-beam-1';
+
+            if (this.scene.textures.exists(startFrameKey)) {
+                const deathSprite = this.scene.add.sprite(deathX, deathY, startFrameKey);
+                deathSprite.setDepth(15);
+                deathSprite.setOrigin(0.5, 0.5);
+                deathSprite.setFlipX(!isRight);
+                this.activeDeathSprite = deathSprite;
+
+                if (this.scene.anims.exists(animKey)) {
+                    deathSprite.play(animKey);
+                }
+
+                let completed = false;
+                const onBeamDeathDone = () => {
+                    if (completed) return;
+                    completed = true;
+                    if (deathSprite.active) deathSprite.destroy();
+                    if (this.activeDeathSprite === deathSprite) this.activeDeathSprite = undefined;
+                    this.finishRespawn();
+                };
+
+                deathSprite.once(Phaser.Animations.Events.ANIMATION_COMPLETE, onBeamDeathDone);
+                this.scene.time.delayedCall(1100, onBeamDeathDone);
+            } else {
+                this.finishRespawn();
+            }
+            return;
+        }
+
+        // Instant respawn for regular boss fight deaths (falling into pit / direct boss collision)
+        const inBossFight = Boolean(
+            (this.scene as any).eleckingBoss &&
+            ((this.scene as any).eleckingBoss.isEntranceRevealed || (this.scene as any).eleckingBoss.isPlayerInArena())
+        );
+
+        if (inBossFight) {
+            this.finishRespawn();
+            return;
+        }
+
+        if (reason === 'lava' || reason === 'fire') {
+            const spriteKey = isRight ? 'lava-death-r' : 'lava-death-l';
+            const animKey = isRight ? 'lava-death-r-anim' : 'lava-death-l-anim';
+            const effectDuration = 520;
+
+            if (this.scene.textures.exists(spriteKey)) {
+                // Spawn inside the lava block
+                const deathSprite = this.scene.add.sprite(deathX, deathY + 6, spriteKey, isRight ? 0 : 5);
+                deathSprite.setDepth(10);
+                deathSprite.setOrigin(0.5, 0.5);
+                this.activeDeathSprite = deathSprite;
+
+                if (this.scene.anims.exists(animKey)) {
+                    deathSprite.play(animKey);
+                }
+
+                // Smoothly drown and sink deep into the molten lava block while melting away
+                this.scene.tweens.add({
+                    targets: deathSprite,
+                    y: deathY + 24,
+                    alpha: { from: 1, to: 0 },
+                    duration: effectDuration,
+                    ease: 'Sine.easeIn',
+                    onComplete: () => {
+                        if (deathSprite.active) deathSprite.destroy();
+                        if (this.activeDeathSprite === deathSprite) this.activeDeathSprite = undefined;
+                        this.finishRespawn();
+                    }
+                });
+            } else {
+                this.scene.time.delayedCall(effectDuration, () => {
+                    this.finishRespawn();
+                });
+            }
+        } else if (reason === 'electric' || reason === 'lightning' || reason === 'thunder') {
+            // Electric death effect (electric death sprite: top row left-to-right looking right, bottom row right-to-left looking left)
+            const spriteKey = 'electric-death';
+            const animKey = isRight ? 'electric-death-r-anim' : 'electric-death-l-anim';
+            const effectDuration = 650;
+
+            if (this.scene.textures.exists(spriteKey)) {
+                const deathSprite = this.scene.add.sprite(deathX, deathY, spriteKey, isRight ? 0 : 23);
+                deathSprite.setDepth(10);
+                deathSprite.setOrigin(0.5, 0.5);
+                this.activeDeathSprite = deathSprite;
+
+                if (this.scene.anims.exists(animKey)) {
+                    deathSprite.play(animKey);
+                }
+
+                this.scene.tweens.add({
+                    targets: deathSprite,
+                    y: deathY - 12,
+                    alpha: { from: 1, to: 0 },
+                    duration: effectDuration,
+                    ease: 'Sine.easeOut',
+                    onComplete: () => {
+                        if (deathSprite.active) deathSprite.destroy();
+                        if (this.activeDeathSprite === deathSprite) this.activeDeathSprite = undefined;
+                        this.finishRespawn();
+                    }
+                });
+            } else {
+                this.scene.time.delayedCall(effectDuration, () => {
+                    this.finishRespawn();
+                });
+            }
+        } else {
+            // Simple / normal death effect (simple death sprite: top row left-to-right looking right, bottom row right-to-left looking left)
+            const spriteKey = 'simple-death';
+            const animKey = isRight ? 'simple-death-r-anim' : 'simple-death-l-anim';
+            const effectDuration = 550;
+
+            if (this.scene.textures.exists(spriteKey)) {
+                const deathSprite = this.scene.add.sprite(deathX, deathY, spriteKey, isRight ? 0 : 17);
+                deathSprite.setDepth(10);
+                deathSprite.setOrigin(0.5, 0.5);
+                this.activeDeathSprite = deathSprite;
+
+                if (this.scene.anims.exists(animKey)) {
+                    deathSprite.play(animKey);
+                }
+
+                this.scene.tweens.add({
+                    targets: deathSprite,
+                    y: deathY - 24,
+                    alpha: { from: 1, to: 0 },
+                    duration: effectDuration,
+                    ease: 'Cubic.easeOut',
+                    onComplete: () => {
+                        if (deathSprite.active) deathSprite.destroy();
+                        if (this.activeDeathSprite === deathSprite) this.activeDeathSprite = undefined;
+                        this.finishRespawn();
+                    }
+                });
+            } else {
+                this.scene.time.delayedCall(effectDuration, () => {
+                    this.finishRespawn();
+                });
+            }
+        }
+    }
+}

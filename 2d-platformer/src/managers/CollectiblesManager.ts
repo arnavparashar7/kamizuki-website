@@ -1,0 +1,193 @@
+// src/managers/CollectiblesManager.ts
+import Phaser from 'phaser';
+import { Player } from '../entities/Player';
+import { UIManager } from './UIManager';
+import { InventoryManager } from './InventoryManager';
+import { SoundManager } from './SoundManager';
+
+export class CollectiblesManager {
+    private scene: Phaser.Scene;
+    private player: Player;
+    private uiManager: UIManager;
+    private inventoryManager: InventoryManager;
+    private soundManager?: SoundManager;
+    private map!: Phaser.Tilemaps.Tilemap;
+
+    private coinSprites: Phaser.GameObjects.Sprite[] = [];
+    private gunSprites: Phaser.GameObjects.Sprite[] = [];
+    private totemSprites: Phaser.GameObjects.Sprite[] = [];
+
+    public coinsCollected: number = 0;
+    private collectedItemKeys: Set<string> = new Set();
+
+    // Checkpoint Snapshots
+    private consumedTotemKeys: Set<string> = new Set();
+
+    constructor(
+        scene: Phaser.Scene, 
+        player: Player, 
+        uiManager: UIManager, 
+        inventoryManager: InventoryManager,
+        soundManager?: SoundManager
+    ) {
+        this.scene = scene;
+        this.player = player;
+        this.uiManager = uiManager;
+        this.inventoryManager = inventoryManager;
+        this.soundManager = soundManager;
+    }
+
+    public addCoins(amount: number = 1) {
+        this.coinsCollected += amount;
+    }
+
+    public onTotemConsumed() {
+        for (const key of this.collectedItemKeys) {
+            if (key.startsWith('Totem_')) {
+                this.consumedTotemKeys.add(key);
+            }
+        }
+    }
+
+    setupCollectibles(map: Phaser.Tilemaps.Tilemap) {
+        this.map = map;
+        this.spawnAllCollectibles();
+        this.saveCheckpointSnapshot();
+    }
+
+    public saveCheckpointSnapshot() {
+        // Collectibles persist forward across checkpoints and deaths
+    }
+
+    public rollbackToCheckpoint() {
+        // Collected coins and consumed totems persist across deaths and do NOT respawn
+        for (const key of this.consumedTotemKeys) {
+            this.collectedItemKeys.add(key);
+        }
+        if (this.map) {
+            this.spawnAllCollectibles();
+        }
+    }
+
+    public spawnAllCollectibles() {
+        // Clear existing active sprites
+        this.coinSprites.forEach(s => { if (s && s.active) s.destroy(); });
+        this.gunSprites.forEach(s => { if (s && s.active) s.destroy(); });
+        this.totemSprites.forEach(s => { if (s && s.active) s.destroy(); });
+
+        this.coinSprites = this.createGroup('Coin', 'coin', 'coin-spin', (c) => {
+            this.uiManager.playCoinPickupEffect(c.x, c.y, 1);
+            this.coinsCollected++;
+            this.soundManager?.playCoin();
+        });
+
+        this.gunSprites = this.createGroup('GunPowerup', 'gun-powerup', '', (g) => {
+            this.uiManager.spawnParticles(g.x, g.y, 0x00FFFF);
+            this.scene.cameras.main.shake(150, 0.006);
+            this.inventoryManager.addGun();
+            this.soundManager?.playPowerup();
+        });
+
+        this.totemSprites = this.createGroup('Totem', 'totem', '', (_t) => {
+            this.inventoryManager.addTotem();
+        });
+    }
+
+    public resetAll() {
+        this.coinsCollected = 0;
+        this.collectedItemKeys.clear();
+        this.consumedTotemKeys.clear();
+        if (this.map) {
+            this.spawnAllCollectibles();
+        }
+    }
+
+    private createGroup(name: string, key: string, anim: string, onCollect: (obj: Phaser.GameObjects.Sprite) => void): Phaser.GameObjects.Sprite[] {
+        const sprites: Phaser.GameObjects.Sprite[] = [];
+        const objects = this.map.createFromObjects('Objects', { name, key });
+
+        objects.forEach((obj: any) => {
+            const uniqueKey = `${name}_${Math.round(obj.x)}_${Math.round(obj.y)}`;
+
+            // Skip items that were collected BEFORE the active checkpoint
+            if (this.collectedItemKeys.has(uniqueKey)) {
+                obj.destroy();
+                return;
+            }
+
+            // Check for custom scale property or default collectible scale
+            let customScale = 1.0;
+            if (Array.isArray(obj.properties)) {
+                const scaleProp = obj.properties.find((p: any) => p && (p.name === 'scale' || p.name === 'size' || p.name === 'coinscale'));
+                if (scaleProp && scaleProp.value !== undefined && !isNaN(parseFloat(scaleProp.value))) {
+                    customScale = parseFloat(scaleProp.value);
+                }
+            } else if (obj.properties && typeof obj.properties === 'object') {
+                const propVal = obj.properties.scale ?? obj.properties.size ?? obj.properties.coinscale;
+                if (propVal !== undefined && !isNaN(parseFloat(propVal))) {
+                    customScale = parseFloat(propVal);
+                }
+            }
+            if (obj.getData && typeof obj.getData === 'function') {
+                const dataScale = obj.getData('scale') ?? obj.getData('size') ?? obj.getData('coinscale');
+                if (dataScale !== undefined && dataScale !== null && !isNaN(parseFloat(dataScale))) {
+                    customScale = parseFloat(dataScale);
+                }
+            }
+            if (name === 'GunPowerup' && customScale === 1.0) {
+                customScale = 0.65; // Sized down from raw 32x32 to ~21px
+            }
+            if (customScale !== 1.0) {
+                obj.setScale(customScale);
+            }
+
+            this.scene.physics.add.existing(obj, false);
+            const body = obj.body as Phaser.Physics.Arcade.Body;
+            if (body) {
+                body.setAllowGravity(false);
+                body.setImmovable(true);
+                
+                if (name === 'Coin') {
+                    // Visible gold coin disk is centered ~16px diameter in 32x32 frame
+                    body.setSize(18, 18);
+                    body.setOffset(7, 7);
+                } else if (name === 'GunPowerup') {
+                    body.setSize(20, 20);
+                    body.setOffset(6, 6);
+                } else if (name === 'Totem') {
+                    body.setSize(18, 22);
+                    body.setOffset(7, 5);
+                }
+            }
+
+            obj.setDepth(2.8);
+            obj.setData('uniqueKey', uniqueKey);
+            if (anim && this.scene.anims.exists(anim)) {
+                obj.play(anim);
+            }
+            this.addHoverTween(obj);
+            sprites.push(obj);
+
+            this.scene.physics.add.overlap(this.player, obj, () => {
+                this.collectedItemKeys.add(uniqueKey);
+                onCollect(obj);
+                const idx = sprites.indexOf(obj);
+                if (idx > -1) sprites.splice(idx, 1);
+                obj.destroy();
+            });
+        });
+        return sprites;
+    }
+
+    private addHoverTween(obj: any) {
+        const startY = obj.y;
+        this.scene.tweens.add({ 
+            targets: obj, 
+            y: startY - 4, 
+            duration: 1000 + Math.random() * 500, 
+            yoyo: true, 
+            repeat: -1, 
+            ease: 'Sine.easeInOut'
+        });
+    }
+}

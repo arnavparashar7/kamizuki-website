@@ -405,36 +405,27 @@
       <div class="game-viewport-card">
         <div class="game-toolbar">
           <div class="game-stat-item">
-            <img src="assets/icons/badge_hearts_health.png" style="width: 18px;" alt="Health" />
-            <span>HP: <strong class="text-crimson">100 / 100</strong></span>
-          </div>
-
-          <div class="game-stat-item">
             <img src="assets/icons/badge_swords.png" style="width: 18px;" alt="Controls" />
-            <span>Controls: <strong>A / D (Move) | Space (Jump) | J (Slash)</strong></span>
+            <span>Controls: <strong>WASD / Arrows (Move) | Space (Jump) | Left-Click (Blaster) | E (Totem)</strong></span>
           </div>
 
           <div style="display: flex; gap: 0.75rem;">
-            <button class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" onclick="window.gameEngine.reset()">
+            <button class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" onclick="window.toggleGameFullscreen()">
+              <img src="assets/icons/chibi_external.png" class="btn-icon-img" alt="Fullscreen" /> Fullscreen
+            </button>
+            <button class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" onclick="window.restartGame()">
               <img src="assets/icons/chibi_refresh.png" class="btn-icon-img" alt="Reset" /> Restart Stage
             </button>
           </div>
         </div>
 
         <div class="game-canvas-wrapper">
-          <canvas id="game-canvas"></canvas>
-        </div>
-
-        <!-- Mobile Touch Controls -->
-        <div class="mobile-controls-bar">
-          <div style="display: flex; gap: 0.75rem;">
-            <button class="touch-btn" ontouchstart="window.gameEngine.keys.left=true" ontouchend="window.gameEngine.keys.left=false">◀</button>
-            <button class="touch-btn" ontouchstart="window.gameEngine.keys.right=true" ontouchend="window.gameEngine.keys.right=false">▶</button>
-          </div>
-          <div style="display: flex; gap: 0.75rem;">
-            <button class="touch-btn touch-btn-action" ontouchstart="window.gameEngine.keys.up=true" ontouchend="window.gameEngine.keys.up=false">JUMP</button>
-            <button class="touch-btn touch-btn-action" ontouchstart="window.gameEngine.keys.attack=true" ontouchend="window.gameEngine.keys.attack=false">SLASH</button>
-          </div>
+          <iframe id="kamizuki-game-iframe"
+                  src="game/index.html?mode=framed"
+                  title="KamiZuki Stage 1 : The Fallen Shrine"
+                  allow="fullscreen; autoplay; clipboard-write"
+                  style="width: 100%; height: 100%; border: none; display: block; background: #07090e;">
+          </iframe>
         </div>
       </div>
 
@@ -445,9 +436,9 @@
             <img src="assets/icons/badge_07.png" class="badge-icon-img" style="width: 38px; height: 38px;" alt="Torii" /> STAGE OBJECTIVE
           </div>
           <ul class="detail-box-list">
-            <li>Navigate across the Fallen Shrine platforms.</li>
-            <li>Collect spirit orbs along the path.</li>
-            <li>Defeat Aka-Oni (Final Stage 1 Boss) to complete the trial.</li>
+            <li>Navigate across the Fallen Shrine ruins and platforms.</li>
+            <li>Collect spirit orbs and ancient coins along the sacred path.</li>
+            <li>Defeat Elecking (The Thunder God Boss) to complete the trial.</li>
           </ul>
         </div>
 

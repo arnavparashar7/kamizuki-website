@@ -111,11 +111,14 @@ function initNavigation() {
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Handle game loop state
-    if (targetPageId === 'page-game' && window.gameEngine) {
-      window.gameEngine.start();
-    } else if (window.gameEngine) {
-      window.gameEngine.stop();
+    // Handle game focus state
+    if (targetPageId === 'page-game') {
+      const iframe = document.getElementById('kamizuki-game-iframe');
+      if (iframe) {
+        setTimeout(() => {
+          try { iframe.focus(); } catch (e) {}
+        }, 150);
+      }
     }
   }
 
@@ -168,6 +171,17 @@ function initWeb3UI() {
     } else {
       walletBtns.forEach(b => b.style.display = 'inline-flex');
       if (walletPill) walletPill.style.display = 'none';
+    }
+
+    // Sync connected wallet with game iframe
+    if (state.walletAddress) {
+      const iframe = document.getElementById('kamizuki-game-iframe');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'KAMIZUKI_SET_WALLET',
+          wallet: state.walletAddress
+        }, '*');
+      }
     }
 
     // 2. Eligibility Card UI Updates on Page 1
@@ -347,26 +361,89 @@ function initPage3Tabs() {
 }
 
 /* --------------------------------------------------------------------------
-   6. GAME STAGE INITIALIZATION & BOSS DEFEAT CALLBACK
+   6. GAME STAGE INITIALIZATION & POSTMESSAGE BRIDGE
    -------------------------------------------------------------------------- */
-function initGameStage() {
-  const game = new window.KamiZukiGameEngine('game-canvas');
-  window.gameEngine = game;
+window.restartGame = function() {
+  const iframe = document.getElementById('kamizuki-game-iframe');
+  if (iframe) {
+    iframe.src = 'game/index.html?mode=framed&t=' + Date.now();
+    showToast('🔄 Stage 1 restarted.', 'info');
+  }
+};
 
-  window.onKamiZukiBossDefeated = function() {
+window.toggleGameFullscreen = function() {
+  const iframe = document.getElementById('kamizuki-game-iframe');
+  if (!iframe) return;
+  if (!document.fullscreenElement) {
+    if (iframe.requestFullscreen) {
+      iframe.requestFullscreen();
+    } else if (iframe.webkitRequestFullscreen) {
+      iframe.webkitRequestFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+};
+
+function initGameStage() {
+  window.onKamiZukiBossDefeated = function(stats) {
     showToast('🏆 STAGE 1 BOSS DEFEATED! Stage 3 Unlocked.', 'success');
     setTimeout(() => {
       window.navigateToPage('page-tickets');
-    }, 2000);
+    }, 2200);
   };
+
+  // PostMessage Bridge between KamiZuki website and 2D Platformer Game Iframe
+  window.addEventListener('message', (event) => {
+    if (!event.data) return;
+
+    // Game is loaded and ready: send connected wallet
+    if (event.data.type === 'KAMIZUKI_GAME_READY') {
+      const iframe = document.getElementById('kamizuki-game-iframe');
+      if (iframe && iframe.contentWindow && window.kamiZukiWeb3?.state?.walletAddress) {
+        iframe.contentWindow.postMessage({
+          type: 'KAMIZUKI_SET_WALLET',
+          wallet: window.kamiZukiWeb3.state.walletAddress
+        }, '*');
+      }
+    }
+
+    // Game completed / Boss defeated
+    if (event.data.type === 'KAMIZUKI_STAGE_COMPLETE') {
+      const { payload, stats } = event.data;
+      // Verification check: ensure run is legitimate or has sufficient playtime
+      if (payload && payload.isLegitimate) {
+        if (window.kamiZukiWeb3) {
+          window.kamiZukiWeb3.recordBossDefeat();
+        }
+        if (window.onKamiZukiBossDefeated) {
+          window.onKamiZukiBossDefeated(stats);
+        }
+      } else {
+        console.warn('[KamiZuki] Run payload validation note:', payload);
+        // Fallback: still reward player if duration >= 5000ms
+        if (stats && (stats.durationMs >= 5000 || stats.coins > 0 || stats.kills > 0)) {
+          if (window.kamiZukiWeb3) window.kamiZukiWeb3.recordBossDefeat();
+          if (window.onKamiZukiBossDefeated) window.onKamiZukiBossDefeated(stats);
+        }
+      }
+    }
+  });
 
   const btnSimulateBoss = document.getElementById('btn-simulate-boss-defeat');
   if (btnSimulateBoss) {
     btnSimulateBoss.addEventListener('click', () => {
-      if (window.gameEngine) {
-        window.gameEngine.boss.hp = 0;
-        window.gameEngine.boss.defeated = true;
-        window.gameEngine.triggerVictory();
+      const iframe = document.getElementById('kamizuki-game-iframe');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'KAMIZUKI_TRIGGER_VICTORY' }, '*');
+      }
+      if (window.kamiZukiWeb3) {
+        window.kamiZukiWeb3.recordBossDefeat();
+      }
+      if (window.onKamiZukiBossDefeated) {
+        window.onKamiZukiBossDefeated({ time: '00:45.00', coins: 10, kills: 5, deaths: 0 });
       }
     });
   }

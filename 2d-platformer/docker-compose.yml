@@ -1,0 +1,72 @@
+# ==============================================================================
+# ONION BOY GAME: DOCKER COMPOSE ORCHESTRATION
+# Boots up SurrealDB Backend & Database and Frontend Game with One Command
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. SurrealDB Backend & Database Engine (SurrealDB 2.x)
+  # ----------------------------------------------------------------------------
+  surrealdb:
+    image: surrealdb/surrealdb:latest
+    container_name: 2d-platformer-NFT-surrealdb
+    user: root
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    command: start --log info -b 0.0.0.0:8000 -u root -p root --allow-all surrealkv:/data/database
+    volumes:
+      - surreal_data:/data
+
+  # ----------------------------------------------------------------------------
+  # 2. Schema Auto-Migration Service (Applies all .surql tables, access & functions)
+  # ----------------------------------------------------------------------------
+  schema-init:
+    image: alpine:3.20
+    container_name: 2d-platformer-NFT-schema-init
+    depends_on:
+      - surrealdb
+    volumes:
+      - ./src/db:/schema:ro
+    command:
+      - /bin/sh
+      - -c
+      - |
+        apk add --no-cache curl > /dev/null 2>&1
+        echo "[Schema-Init] Waiting for SurrealDB engine at http://surrealdb:8000/health..."
+        while ! curl -s http://surrealdb:8000/health > /dev/null 2>&1; do
+          sleep 1
+        done
+        echo "[Schema-Init] SurrealDB is online! Bundling schemas, tables, access models & functions..."
+        cat /schema/init.surql /schema/tables/*.surql /schema/access/*.surql /schema/functions/*.surql > /tmp/bundle.surql
+        echo "[Schema-Init] Applying bundle via SurrealDB REST API..."
+        curl -X POST -u "root:root" -H "NS: nft_platformer" -H "DB: development" -H "surreal-ns: nft_platformer" -H "surreal-db: development" -H "Content-Type: text/plain" -H "Accept: application/json" --data-binary @/tmp/bundle.surql http://surrealdb:8000/sql
+        echo ""
+        echo "[Schema-Init] ✅ SurrealDB Schema Initialization Complete!"
+    restart: "no"
+
+  # ----------------------------------------------------------------------------
+  # 3. Phaser Frontend Game Container
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: 2d-platformer-NFT-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_SURREAL_URL=http://localhost:8000
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - surrealdb
+
+volumes:
+  surreal_data:
+    driver: local
+
+

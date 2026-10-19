@@ -1,1 +1,6 @@
 .vercel
+node_modules/
+2d-platformer/node_modules/
+2d-platformer/dist/
+.DS_Store
+Thumbs.db
