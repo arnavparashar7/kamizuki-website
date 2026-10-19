@@ -688,49 +688,108 @@
        MODAL 1: WEB3 WALLET SELECTION & SIMULATION
        ========================================== -->
   <div id="wallet-modal" class="modal-overlay">
-    <div class="modal-box">
+    <div class="modal-box" style="max-width: 480px;">
       <button class="modal-close-btn" onclick="closeModal('wallet-modal')">×</button>
       
-      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-        <span class="hanko-seal">神月</span>
-        <h3 class="font-display text-xl">CONNECT WALLET</h3>
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span class="hanko-seal">神月</span>
+          <h3 class="font-display text-xl">CONNECT WALLET</h3>
+        </div>
+        <span style="font-size: 0.65rem; background: rgba(200, 28, 46, 0.15); border: 1px solid var(--border-crimson); color: var(--crimson-light); padding: 0.2rem 0.5rem; border-radius: 4px; font-family: var(--font-mono); letter-spacing: 0.05em;">THIRDWEB v5</span>
       </div>
       <p class="text-xs text-parchment-dim mb-4">
-        Connect your Ethereum wallet or select a simulation mode to test eligibility & game unlock.
+        Connect your Ethereum Web3 wallet to verify partner NFT eligibility & enter Stage 1.
       </p>
 
       <div class="wallet-options-list">
-        <!-- Real Web3 MetaMask -->
-        <button class="wallet-opt-btn" onclick="connectMockWallet(null)">
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <img src="assets/icons/chibi_wallet.png" style="width: 24px;" alt="MetaMask" />
-            <span>MetaMask / Web3 Wallet</span>
+        <!-- 1. Thirdweb WalletConnect (Featured) -->
+        <button class="wallet-opt-btn wallet-opt-featured" onclick="connectWallet('walletConnect')">
+          <div style="display: flex; align-items: center; gap: 0.85rem;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(59, 153, 252, 0.15); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(59, 153, 252, 0.4); flex-shrink: 0;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4.9 7.7a9.8 9.8 0 0 1 14.2 0l.5.5a.6.6 0 0 1 0 .8l-1.6 1.6a.4.4 0 0 1-.6 0l-.7-.7a7.2 7.2 0 0 0-10.4 0l-.8.8a.4.4 0 0 1-.6 0L3.3 9a.6.6 0 0 1 0-.8l1.6-1.5zm17.2 3.1l1.8 1.8a.6.6 0 0 1 0 .8l-8.2 8.2a.6.6 0 0 1-.8 0l-5.7-5.7a.4.4 0 0 1 0-.6l1.6-1.6a.4.4 0 0 1 .6 0l4 4 6.8-6.9a.4.4 0 0 1 .6 0l.3.3a.6.6 0 0 1 0 .8l-7.1 7.2a.4.4 0 0 1-.6 0l-4.3-4.3a.4.4 0 0 1 0-.6l1.6-1.6a.4.4 0 0 1 .6 0l2.6 2.6 5.4-5.5a.4.4 0 0 1 .6 0l1.9 1.9z" fill="#3B99FC"/></svg>
+            </div>
+            <div style="text-align: left;">
+              <div style="font-weight: 700; color: #fff; display: flex; align-items: center; gap: 0.4rem;">
+                WalletConnect <span style="font-size: 0.6rem; background: var(--crimson); color: #fff; padding: 0.1rem 0.4rem; border-radius: 3px; font-family: var(--font-mono);">POPULAR</span>
+              </div>
+              <div class="text-xs text-parchment-dim">QR Scan • Trust Wallet, Rainbow, Safe, 300+ Wallets</div>
+            </div>
           </div>
-          <span class="text-xs text-parchment-dim">Ethereum Mainnet</span>
+          <span class="text-xs text-gold">Connect →</span>
         </button>
 
-        <!-- Test Option B: Eligible Wallet -->
-        <button class="wallet-opt-btn" onclick="connectMockWallet('eligible')">
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <img src="assets/icons/badge_check.png" style="width: 24px;" alt="Check" />
-            <span>Simulate ELIGIBLE Wallet</span>
+        <!-- 2. MetaMask (Thirdweb) -->
+        <button class="wallet-opt-btn" onclick="connectWallet('io.metamask')">
+          <div style="display: flex; align-items: center; gap: 0.85rem;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(246, 133, 27, 0.15); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(246, 133, 27, 0.4); flex-shrink: 0;">
+              <svg width="22" height="22" viewBox="0 0 32 32"><path fill="#E2761B" d="m27.5 4.3-9.9 7.3 1.8-4.3z"/><path fill="#E4761B" d="m4.5 4.3 9.8 7.3-1.8-4.3z"/><path fill="#D7C1B3" d="m23.4 22.3-2.6 3.9 5.6 1.5 1.6-5.4z"/><path fill="#233447" d="m8.6 22.3 2.6 3.9-5.6 1.5-1.6-5.4z"/><path fill="#CD6116" d="m10.8 14.4-1.7 2.6 6 1.8z"/><path fill="#E4751F" d="m21.2 14.4 1.7 2.6-6 1.8z"/><path fill="#F6851B" d="m4.5 4.3 8 7.3-1.7 2.8-5.3-2z"/><path fill="#F6851B" d="m27.5 4.3-8 7.3 1.7 2.8 5.3-2z"/><path fill="#C0AD9E" d="m16 20.3-4.8 2 2.6 3.9z"/><path fill="#161616" d="m16 20.3 4.8 2-2.6 3.9z"/></svg>
+            </div>
+            <div style="text-align: left;">
+              <div style="font-weight: 700; color: #fff;">MetaMask</div>
+              <div class="text-xs text-parchment-dim">Browser Extension & Mobile App</div>
+            </div>
           </div>
-          <span class="text-xs text-crimson font-bold">✓ Holds KamiZuki Pass</span>
+          <span class="text-xs text-parchment-dim">Installed</span>
         </button>
 
-        <!-- Test Option C: Ineligible Wallet -->
-        <button class="wallet-opt-btn" onclick="connectMockWallet('ineligible')">
+        <!-- 3. Coinbase Wallet (Thirdweb) -->
+        <button class="wallet-opt-btn" onclick="connectWallet('com.coinbase.wallet')">
+          <div style="display: flex; align-items: center; gap: 0.85rem;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(0, 82, 255, 0.15); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0, 82, 255, 0.4); flex-shrink: 0;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#0052FF"/><rect x="8.5" y="8.5" width="7" height="7" rx="1.5" fill="#fff"/></svg>
+            </div>
+            <div style="text-align: left;">
+              <div style="font-weight: 700; color: #fff;">Coinbase Wallet</div>
+              <div class="text-xs text-parchment-dim">Smart & Mobile Wallet</div>
+            </div>
+          </div>
+          <span class="text-xs text-parchment-dim">EVM</span>
+        </button>
+
+        <!-- 4. Thirdweb In-App Wallet (Social/Email) -->
+        <button class="wallet-opt-btn" onclick="connectWallet('inApp')">
+          <div style="display: flex; align-items: center; gap: 0.85rem;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(200, 28, 46, 0.15); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(200, 28, 46, 0.4); flex-shrink: 0;">
+              <img src="assets/icons/chibi_wallet.png" style="width: 22px; height: 22px; object-fit: contain;" alt="In-App" />
+            </div>
+            <div style="text-align: left;">
+              <div style="font-weight: 700; color: #fff;">Social & Email Wallet</div>
+              <div class="text-xs text-parchment-dim">Google • Email • Passkey Login</div>
+            </div>
+          </div>
+          <span class="text-xs text-crimson-light">Thirdweb</span>
+        </button>
+
+        <!-- Divider for Testing / Sandbox -->
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin: 0.75rem 0 0.5rem 0;">
+          <div style="flex: 1; height: 1px; background: var(--border-line);"></div>
+          <span class="text-xs text-parchment-dim" style="font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.05em;">OR TEST DEMO MODES</span>
+          <div style="flex: 1; height: 1px; background: var(--border-line);"></div>
+        </div>
+
+        <!-- Simulation Option: Eligible -->
+        <button class="wallet-opt-btn" onclick="connectWallet('eligible')">
           <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <img src="assets/icons/chibi_warning_error.png" style="width: 24px;" alt="Warning" />
+            <img src="assets/icons/badge_check.png" style="width: 22px;" alt="Check" />
+            <span>Simulate ELIGIBLE Pass Holder</span>
+          </div>
+          <span class="text-xs text-crimson font-bold">✓ Pass Holder</span>
+        </button>
+
+        <!-- Simulation Option: Ineligible -->
+        <button class="wallet-opt-btn" onclick="connectWallet('ineligible')">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <img src="assets/icons/chibi_warning_error.png" style="width: 22px;" alt="Warning" />
             <span>Simulate INELIGIBLE Wallet</span>
           </div>
           <span class="text-xs text-parchment-dim">0 Partner NFTs</span>
         </button>
 
-        <!-- Test Option D: Wrong Network State -->
-        <button class="wallet-opt-btn" onclick="connectMockWallet('wrong_network')">
+        <!-- Simulation Option: Wrong Network -->
+        <button class="wallet-opt-btn" onclick="connectWallet('wrong_network')">
           <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <img src="assets/icons/chibi_settings.png" style="width: 24px;" alt="Settings" />
+            <img src="assets/icons/chibi_settings.png" style="width: 22px;" alt="Settings" />
             <span>Test Wrong Network State</span>
           </div>
           <span class="text-xs text-parchment-dim">Error Simulation</span>

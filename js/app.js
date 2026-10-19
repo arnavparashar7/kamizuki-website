@@ -167,6 +167,7 @@ function initWeb3UI() {
       if (walletPill) {
         walletPill.style.display = 'flex';
         walletAddrEl.textContent = window.kamiZukiWeb3.formatAddress(state.walletAddress);
+        walletPill.title = `Connected: ${state.walletAddress} (Click to disconnect)`;
       }
     } else {
       walletBtns.forEach(b => b.style.display = 'inline-flex');
@@ -292,19 +293,22 @@ function initModals() {
   });
 }
 
-window.connectMockWallet = async function(mode) {
+window.connectWallet = async function(walletType = 'walletConnect') {
   closeModal('wallet-modal');
-  const res = await window.kamiZukiWeb3.connectWallet(mode);
+  showToast('Connecting via Thirdweb...', 'info');
+  const res = await window.kamiZukiWeb3.connectWallet(walletType);
   if (res.success) {
     if (res.eligible) {
-      showToast('✓ Wallet Connected! Verified partner NFT holding.', 'success');
+      const collection = window.kamiZukiWeb3.state.matchedContract?.name || 'KamiZuki Pass';
+      showToast(`✓ Connected (${window.kamiZukiWeb3.formatAddress(res.address)})! Verified: ${collection}`, 'success');
     } else {
-      showToast('⚠️ Wallet Connected: No eligible partner NFT found.', 'warning');
+      showToast(`⚠️ Connected (${window.kamiZukiWeb3.formatAddress(res.address)}): No partner NFT found.`, 'warning');
     }
   } else if (res.error) {
     showToast(`❌ Connection Error: ${res.error}`, 'error');
   }
 };
+window.connectMockWallet = window.connectWallet;
 
 /* --------------------------------------------------------------------------
    5. PAGE 3 TABS & TICKET PURCHASE HANDLER

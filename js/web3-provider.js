@@ -95,71 +95,143 @@ class KamiZukiWeb3Provider {
   }
 
   /**
-   * Connect Wallet : Strictly Read-Only
-   * Only reads user's public address via Thirdweb / EVM provider.
-   * Never requests signatures or transactions.
+   * Connect Wallet using Thirdweb SDK v5
+   * Supports:
+   * - 'walletConnect' (official WalletConnect QR modal across 300+ mobile wallets)
+   * - 'io.metamask' (MetaMask browser extension or app)
+   * - 'com.coinbase.wallet' (Coinbase Wallet)
+   * - 'me.rainbow' (Rainbow Wallet)
+   * - 'inApp' (Thirdweb In-App Wallet: Google / Email)
+   * - 'eligible' | 'ineligible' | 'wrong_network' (Simulation modes)
    */
-  async connectWallet(mockMode = null) {
+  async connectWallet(walletType = 'walletConnect') {
     this.state.status = 'connecting';
     this.state.errorMessage = null;
     this.notify();
 
-    // Natural UI delay for smooth UX transition
-    await new Promise(res => setTimeout(res, 500));
-
     // Simulation Modes for testing UI states without browser wallets
-    if (mockMode === 'eligible') {
+    if (walletType === 'eligible') {
+      await new Promise(res => setTimeout(res, 400));
       this.state.status = 'connected';
       this.state.walletAddress = '0x71C8655F37a911B340248a3B5c4E4';
       this.state.isEligible = true;
       this.state.matchedContract = window.KAMIZUKI_CONFIG.SUPPORTED_NFT_CONTRACTS[0];
       this.saveState();
       this.notify();
-      return { success: true, eligible: true };
+      return { success: true, eligible: true, address: this.state.walletAddress };
     }
 
-    if (mockMode === 'ineligible') {
+    if (walletType === 'ineligible') {
+      await new Promise(res => setTimeout(res, 400));
       this.state.status = 'connected';
       this.state.walletAddress = '0x98A412B9800310248a3B5c0A1';
       this.state.isEligible = false;
       this.state.matchedContract = null;
       this.saveState();
       this.notify();
-      return { success: true, eligible: false };
+      return { success: true, eligible: false, address: this.state.walletAddress };
     }
 
-    if (mockMode === 'wrong_network') {
+    if (walletType === 'wrong_network') {
+      await new Promise(res => setTimeout(res, 400));
       this.state.status = 'disconnected';
       this.state.errorMessage = 'Wrong Network: Please connect to Ethereum Mainnet.';
       this.notify();
       return { success: false, error: this.state.errorMessage };
     }
 
-    // Standard EVM / Thirdweb Wallet Connection (Read-Only)
-    if (window.ethereum) {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        if (accounts && accounts.length > 0) {
-          this.state.status = 'connected';
-          this.state.walletAddress = accounts[0];
-          await this.checkNFTEligibility(accounts[0]);
-          return { success: true, eligible: this.state.isEligible };
+    // Real Thirdweb Connection
+    try {
+      const clientId = window.KAMIZUKI_CONFIG?.THIRDWEB?.CLIENT_ID || "8f566ff051f67f08cf2c40c1737e9095";
+      
+      if (!this.thirdwebClient) {
+        const { createThirdwebClient } = await import('https://esm.sh/thirdweb@5');
+        this.thirdwebClient = createThirdwebClient({ clientId });
+      }
+
+      const { createWallet, inAppWallet } = await import('https://esm.sh/thirdweb@5/wallets');
+      const { ethereum } = await import('https://esm.sh/thirdweb@5/chains');
+
+      let wallet;
+      if (walletType === 'inApp') {
+        wallet = inAppWallet();
+      } else if (walletType === 'io.metamask') {
+        wallet = createWallet('io.metamask');
+      } else if (walletType === 'com.coinbase.wallet') {
+        wallet = createWallet('com.coinbase.wallet');
+      } else if (walletType === 'me.rainbow') {
+        wallet = createWallet('me.rainbow');
+      } else {
+        // Default: WalletConnect
+        wallet = createWallet('walletConnect');
+      }
+
+      console.log(`[KamiZuki Web3] Connecting via Thirdweb (${walletType})...`);
+      const account = await wallet.connect({
+        client: this.thirdwebClient,
+        chain: ethereum
+      });
+
+      if (account && account.address) {
+        this.activeWallet = wallet;
+        this.state.status = 'connected';
+        this.state.walletAddress = account.address;
+
+        if (wallet.subscribe) {
+          wallet.subscribe('accountChanged', (newAccount) => {
+            if (newAccount?.address) {
+              this.state.walletAddress = newAccount.address;
+              this.checkNFTEligibility(newAccount.address);
+            } else {
+              this.disconnectWallet();
+            }
+          });
+          wallet.subscribe('disconnect', () => {
+            this.disconnectWallet();
+          });
         }
-      } catch (err) {
+
+        await this.checkNFTEligibility(account.address);
+        return { success: true, eligible: this.state.isEligible, address: account.address };
+      } else {
+        throw new Error('No account returned from wallet connection');
+      }
+    } catch (err) {
+      console.warn('[KamiZuki Web3] Thirdweb connect warning:', err);
+
+      const isUserCancel = err.message?.toLowerCase().includes('reject') || 
+                           err.message?.toLowerCase().includes('cancel') ||
+                           err.message?.toLowerCase().includes('closed');
+
+      if (isUserCancel) {
         this.state.status = 'disconnected';
-        this.state.errorMessage = err.message || 'Wallet connection was cancelled.';
+        this.state.errorMessage = 'Connection request was cancelled.';
         this.notify();
         return { success: false, error: this.state.errorMessage };
       }
-    } else {
-      // Fallback default eligible mock if no browser wallet extension is installed
-      this.state.status = 'connected';
-      this.state.walletAddress = '0x71C8655F37a911B340248a3B5c4E4';
-      this.state.isEligible = true;
-      this.state.matchedContract = window.KAMIZUKI_CONFIG.SUPPORTED_NFT_CONTRACTS[0];
-      this.saveState();
+
+      // Injected browser extension fallback if MetaMask was chosen
+      if (walletType === 'io.metamask' && window.ethereum) {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          if (accounts && accounts[0]) {
+            this.state.status = 'connected';
+            this.state.walletAddress = accounts[0];
+            await this.checkNFTEligibility(accounts[0]);
+            return { success: true, eligible: this.state.isEligible, address: accounts[0] };
+          }
+        } catch (injectedErr) {
+          this.state.status = 'disconnected';
+          this.state.errorMessage = injectedErr.message || 'Injected wallet request rejected.';
+          this.notify();
+          return { success: false, error: this.state.errorMessage };
+        }
+      }
+
+      this.state.status = 'disconnected';
+      this.state.errorMessage = err.message || 'Failed to connect wallet via Thirdweb.';
       this.notify();
-      return { success: true, eligible: true };
+      return { success: false, error: this.state.errorMessage };
     }
   }
 
@@ -249,7 +321,15 @@ class KamiZukiWeb3Provider {
     this.notify();
   }
 
-  disconnectWallet() {
+  async disconnectWallet() {
+    if (this.activeWallet && this.activeWallet.disconnect) {
+      try {
+        await this.activeWallet.disconnect();
+      } catch (e) {
+        console.warn('[KamiZuki Web3] Disconnect error:', e);
+      }
+      this.activeWallet = null;
+    }
     this.state.status = 'disconnected';
     this.state.walletAddress = null;
     this.state.isEligible = false;

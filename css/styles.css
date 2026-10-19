@@ -1323,6 +1323,19 @@ body {
   border-color: var(--crimson-light);
 }
 
+.wallet-opt-featured {
+  background: linear-gradient(135deg, rgba(200, 28, 46, 0.12) 0%, rgba(59, 153, 252, 0.08) 100%);
+  border-color: rgba(200, 28, 46, 0.4);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.wallet-opt-featured:hover {
+  background: linear-gradient(135deg, rgba(200, 28, 46, 0.25) 0%, rgba(59, 153, 252, 0.18) 100%);
+  border-color: var(--crimson-light);
+  box-shadow: 0 6px 20px rgba(240, 62, 81, 0.25);
+  transform: translateY(-1px);
+}
+
 /* Toast Container */
 #toast-container {
   position: fixed;
