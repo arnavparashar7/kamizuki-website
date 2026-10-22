@@ -39,9 +39,10 @@
           <img src="assets/icons/chibi_wallet.png" class="btn-icon-img" alt="Wallet" /> Connect Wallet
         </button>
 
-        <div id="wallet-connected-pill" class="wallet-pill" style="display: none;">
+        <div id="wallet-connected-pill" class="wallet-pill" style="display: none;" title="Click to view wallet & disconnect">
           <span class="pulse-dot"></span>
           <span id="connected-wallet-addr" class="font-mono text-sm">0x71C...3F9</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2.5" style="margin-left: 0.15rem;"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
       </div>
     </div>
@@ -421,7 +422,7 @@
 
         <div class="game-canvas-wrapper">
           <iframe id="kamizuki-game-iframe"
-                  src="game/index.html?mode=framed"
+                  src="game/?mode=framed"
                   title="KamiZuki Stage 1 : The Fallen Shrine"
                   allow="fullscreen; autoplay; clipboard-write"
                   style="width: 100%; height: 100%; border: none; display: block; background: #07090e;">
@@ -799,7 +800,132 @@
   </div>
 
   <!-- ==========================================
-       MODAL 2: VIDEO TRAILER
+       MODAL 2: WALLETCONNECT QR CODE
+       ========================================== -->
+  <div id="walletconnect-qr-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 440px; text-align: center;">
+      <button class="modal-close-btn" onclick="closeWalletConnectQRModal()">×</button>
+      
+      <div style="display: flex; align-items: center; justify-content: center; gap: 0.6rem; margin-bottom: 0.35rem;">
+        <span class="hanko-seal">神月</span>
+        <h3 class="font-display text-xl">WALLETCONNECT</h3>
+      </div>
+      <p class="text-xs text-parchment-dim mb-3">
+        Scan this QR code with any mobile wallet app to connect instantly.
+      </p>
+
+      <!-- QR Code Frame -->
+      <div style="background: #ffffff; padding: 1.25rem; border-radius: 12px; max-width: 260px; margin: 0 auto 1.25rem auto; box-shadow: 0 10px 30px rgba(0,0,0,0.8); aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center;">
+        <div id="walletconnect-qr-container" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #111; font-size: 0.85rem;">
+          <span class="pulse-dot"></span> Generating QR Code...
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <div style="display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 0.85rem;">
+        <button class="btn btn-crimson text-xs" onclick="copyWalletConnectURI()" style="padding: 0.6rem 1.25rem;">
+          📋 Copy Connection Link
+        </button>
+      </div>
+
+      <!-- Mobile Deep Links -->
+      <div style="margin-top: 1rem; border-top: 1px solid var(--border-line); padding-top: 0.85rem;">
+        <div class="text-xs text-parchment-dim mb-2" style="font-size: 0.72rem; letter-spacing: 0.05em;">MOBILE WALLET SHORTCUTS:</div>
+        <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+          <a id="wc-deeplink-metamask" href="#" target="_blank" class="btn btn-outline text-xs" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;">MetaMask</a>
+          <a id="wc-deeplink-rainbow" href="#" target="_blank" class="btn btn-outline text-xs" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;">Rainbow</a>
+          <a id="wc-deeplink-trust" href="#" target="_blank" class="btn btn-outline text-xs" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;">Trust Wallet</a>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1.25rem; font-size: 0.75rem;" class="text-parchment-dim">
+        <span class="pulse-dot"></span> Waiting for approval on your mobile wallet...
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL 3: CONNECTED WALLET ACCOUNT & DISCONNECT
+       ========================================== -->
+  <div id="account-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 480px; background: linear-gradient(180deg, #161824 0%, #0d0e17 100%); border: 1.5px solid rgba(240, 62, 81, 0.45); box-shadow: 0 25px 70px rgba(0, 0, 0, 0.95), 0 0 35px rgba(200, 28, 46, 0.25); border-radius: 16px; padding: 1.75rem;">
+      <button class="modal-close-btn" onclick="closeModal('account-modal')">×</button>
+      
+      <!-- Top Title Bar -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span class="hanko-seal">神月</span>
+          <div>
+            <h3 class="font-display text-xl" style="line-height: 1.1; letter-spacing: 0.04em;">CONNECTED WALLET</h3>
+            <span class="text-xs text-parchment-dim" style="font-size: 0.72rem;">Active Web3 Session & Permissions</span>
+          </div>
+        </div>
+        <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.35); color: #4ade80; padding: 0.25rem 0.65rem; border-radius: 9999px; font-size: 0.72rem; font-family: var(--font-mono); font-weight: 600;">
+          <span class="pulse-dot"></span> Mainnet
+        </div>
+      </div>
+
+      <!-- User Account Identity Card -->
+      <div style="background: rgba(8, 9, 13, 0.75); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.15rem; margin-bottom: 1rem; box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem;">
+          <span style="font-size: 0.7rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-mono);">ACTIVE ACCOUNT</span>
+          <span style="font-size: 0.7rem; color: var(--gold); font-family: var(--font-mono);">EVM • READ ONLY</span>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 10px; padding: 0.75rem 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 0;">
+            <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, rgba(200, 28, 46, 0.3), rgba(59, 153, 252, 0.2)); border: 1.5px solid var(--crimson-light); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 12px rgba(240, 62, 81, 0.4); flex-shrink: 0;">
+              <img src="assets/icons/chibi_wallet.png" style="width: 22px; height: 22px; object-fit: contain;" alt="Wallet" />
+            </div>
+            <div style="min-width: 0;">
+              <div id="account-modal-addr-display" class="font-mono text-base font-bold text-white truncate" style="letter-spacing: 0.03em;">0x...</div>
+              <div style="font-size: 0.7rem; color: rgba(255, 255, 255, 0.45);">Connected via Thirdweb</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0;">
+            <button id="btn-copy-account-addr" class="btn btn-outline text-xs" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; border-color: rgba(255,255,255,0.18);" onclick="copyConnectedWalletAddress()" title="Copy Full Address">
+              📋 Copy
+            </button>
+            <a id="link-account-etherscan" href="#" target="_blank" class="btn btn-outline text-xs" style="padding: 0.4rem 0.65rem; font-size: 0.75rem; border-color: rgba(255,255,255,0.18);" title="View on Etherscan">
+              ↗
+            </a>
+          </div>
+        </div>
+
+        <!-- Ecosystem Access Status Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.85rem;">
+          <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 0.75rem 0.85rem;">
+            <div style="font-size: 0.68rem; color: rgba(255, 255, 255, 0.45); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">NFT PASS ELIGIBILITY</div>
+            <div id="account-modal-eligibility-stat" style="font-size: 0.82rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 0.35rem;">
+              <span class="pulse-dot" style="background:#f59e0b; box-shadow:0 0 6px #f59e0b;"></span> Querying...
+            </div>
+          </div>
+
+          <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 0.75rem 0.85rem;">
+            <div style="font-size: 0.68rem; color: rgba(255, 255, 255, 0.45); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">STAGE 1 TRIAL ACCESS</div>
+            <div id="account-modal-stage-stat" style="font-size: 0.82rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 0.35rem;">
+              Checking...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-top: 1.25rem;">
+        <button class="btn-switch-wallet" onclick="switchConnectedWallet()" style="width: 100%; padding: 0.75rem 1.25rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.9); font-weight: 600; font-size: 0.85rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+          <img src="assets/icons/chibi_settings.png" style="width: 16px; height: 16px; object-fit: contain;" alt="Switch" /> Switch to Another Wallet
+        </button>
+
+        <button class="btn-disconnect" onclick="confirmDisconnectWallet()" style="width: 100%; padding: 0.85rem 1.25rem; background: linear-gradient(135deg, #c81c2e 0%, #99101e 100%); border: 1px solid #f03e51; color: #ffffff; font-weight: 700; font-size: 0.9rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.6rem; box-shadow: 0 4px 15px rgba(200, 28, 46, 0.4); letter-spacing: 0.03em;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          Disconnect Wallet
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL 4: VIDEO TRAILER
        ========================================== -->
   <div id="trailer-modal" class="modal-overlay">
     <div class="modal-box" style="max-width: 800px; padding: 1rem;">
@@ -826,7 +952,8 @@
 
   <!-- Scripts -->
   <script src="js/config.js"></script>
-  <script type="module" src="js/web3-provider.js"></script>
+  <script src="js/thirdweb-bundle.js"></script>
+  <script src="js/web3-provider.js"></script>
   <script src="js/game-engine.js"></script>
   <script src="js/app.js"></script>
 </body>

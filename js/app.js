@@ -289,11 +289,9 @@ function initWeb3UI() {
   }
 
   if (walletPill) {
-    walletPill.addEventListener('click', () => {
-      if (confirm('Disconnect wallet?')) {
-        window.kamiZukiWeb3.disconnectWallet();
-        showToast('Wallet disconnected', 'info');
-      }
+    walletPill.addEventListener('click', (e) => {
+      e.preventDefault();
+      openAccountModal();
     });
   }
 }
@@ -319,6 +317,82 @@ function initModals() {
   });
 }
 
+// Current WalletConnect URI
+window._activeWalletConnectUri = null;
+
+window.showWalletConnectQRModal = function(uri) {
+  window._activeWalletConnectUri = uri;
+  const qrContainer = document.getElementById('walletconnect-qr-container');
+  const uriInput = document.getElementById('walletconnect-uri-input');
+
+  if (qrContainer && window.ThirdwebSDK && window.ThirdwebSDK.renderQRCodeSVG) {
+    try {
+      const svg = window.ThirdwebSDK.renderQRCodeSVG(uri);
+      qrContainer.innerHTML = svg;
+      const svgEl = qrContainer.querySelector('svg');
+      if (svgEl) {
+        svgEl.style.width = '100%';
+        svgEl.style.height = '100%';
+        svgEl.style.borderRadius = '8px';
+      }
+    } catch (e) {
+      console.error('Failed to render QR Code SVG:', e);
+    }
+  }
+
+  if (uriInput) {
+    uriInput.value = uri;
+  }
+
+  // Update mobile direct deep link buttons
+  const metaMaskLink = document.getElementById('wc-deeplink-metamask');
+  const rainbowLink = document.getElementById('wc-deeplink-rainbow');
+  const trustLink = document.getElementById('wc-deeplink-trust');
+
+  const encodedUri = encodeURIComponent(uri);
+  if (metaMaskLink) metaMaskLink.href = `https://metamask.app.link/wc?uri=${encodedUri}`;
+  if (rainbowLink) rainbowLink.href = `https://rnbwapp.com/wc?uri=${encodedUri}`;
+  if (trustLink) trustLink.href = `https://link.trustwallet.com/wc?uri=${encodedUri}`;
+
+  openModal('walletconnect-qr-modal');
+};
+
+window.closeWalletConnectQRModal = function() {
+  closeModal('walletconnect-qr-modal');
+  window._activeWalletConnectUri = null;
+};
+
+window.copyWalletConnectURI = function() {
+  const uri = window._activeWalletConnectUri;
+  if (!uri) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(uri).then(() => {
+      showToast('✓ WalletConnect URI copied to clipboard!', 'success');
+    }).catch(() => {
+      fallbackCopyText(uri);
+    });
+  } else {
+    fallbackCopyText(uri);
+  }
+};
+
+function fallbackCopyText(text) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.position = "fixed";
+  textArea.style.left = "-999999px";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    document.execCommand('copy');
+    showToast('✓ WalletConnect URI copied to clipboard!', 'success');
+  } catch (err) {
+    showToast('Could not copy link automatically.', 'error');
+  }
+  document.body.removeChild(textArea);
+}
+
 window.connectWallet = async function(walletType = 'walletConnect') {
   closeModal('wallet-modal');
 
@@ -341,10 +415,87 @@ window.connectWallet = async function(walletType = 'walletConnect') {
       showToast(`⚠️ Connected (${window.kamiZukiWeb3.formatAddress(res.address)}): No partner NFT found.`, 'warning');
     }
   } else if (res.error) {
-    showToast(`❌ Connection Error: ${res.error}`, 'error');
+    showToast(`❌ Connection Notice: ${res.error}`, 'error');
   }
 };
 window.connectMockWallet = window.connectWallet;
+
+/* --------------------------------------------------------------------------
+   ACCOUNT / DISCONNECT MODAL HANDLERS
+   -------------------------------------------------------------------------- */
+window.openAccountModal = function() {
+  const state = window.kamiZukiWeb3?.state;
+  if (!state || !state.walletAddress) return;
+
+  const addrDisplay = document.getElementById('account-modal-addr-display');
+  const etherscanLink = document.getElementById('link-account-etherscan');
+  const eligibilityStat = document.getElementById('account-modal-eligibility-stat');
+  const stageStat = document.getElementById('account-modal-stage-stat');
+
+  if (addrDisplay) {
+    addrDisplay.textContent = window.kamiZukiWeb3.formatAddress(state.walletAddress);
+    addrDisplay.title = state.walletAddress;
+  }
+
+  if (etherscanLink) {
+    etherscanLink.href = `https://etherscan.io/address/${state.walletAddress}`;
+  }
+
+  if (eligibilityStat) {
+    if (state.isCheckingEligibility) {
+      eligibilityStat.innerHTML = '<span class="pulse-dot" style="background:#f59e0b; box-shadow:0 0 6px #f59e0b;"></span> Querying...';
+      eligibilityStat.className = 'account-stat-val text-gold';
+    } else if (state.isEligible) {
+      const colName = state.matchedContract?.name || 'KamiZuki Pass';
+      eligibilityStat.innerHTML = `<span style="color: #22c55e;">✓ ${colName}</span>`;
+      eligibilityStat.className = 'account-stat-val text-crimson-light';
+    } else {
+      eligibilityStat.innerHTML = '<span style="color: rgba(255,255,255,0.45);">None (0 NFTs)</span>';
+      eligibilityStat.className = 'account-stat-val';
+    }
+  }
+
+  if (stageStat) {
+    if (state.stage1Completed) {
+      stageStat.innerHTML = '<span style="color: #f59e0b;">★ Boss Defeated (Unlocked)</span>';
+    } else if (state.isEligible) {
+      stageStat.innerHTML = '<span style="color: #22c55e;">Trial Ready (Accessible)</span>';
+    } else {
+      stageStat.innerHTML = '<span style="color: rgba(255,255,255,0.45);">Locked 🔒</span>';
+    }
+  }
+
+  openModal('account-modal');
+};
+
+window.copyConnectedWalletAddress = function() {
+  const state = window.kamiZukiWeb3?.state;
+  if (!state || !state.walletAddress) return;
+  const addr = state.walletAddress;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(addr).then(() => {
+      showToast(`✓ Copied: ${window.kamiZukiWeb3.formatAddress(addr)}`, 'success');
+    }).catch(() => {
+      fallbackCopyText(addr);
+    });
+  } else {
+    fallbackCopyText(addr);
+  }
+};
+
+window.switchConnectedWallet = function() {
+  closeModal('account-modal');
+  openModal('wallet-modal');
+};
+
+window.confirmDisconnectWallet = function() {
+  closeModal('account-modal');
+  if (window.kamiZukiWeb3) {
+    window.kamiZukiWeb3.disconnectWallet();
+    showToast('Wallet disconnected', 'info');
+  }
+};
 
 /* --------------------------------------------------------------------------
    5. PAGE 3 TABS & TICKET PURCHASE HANDLER

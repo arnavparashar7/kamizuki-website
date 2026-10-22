@@ -135,7 +135,7 @@ export class InventoryManager {
         GameEventBus.getInstance().emit('toast:show', {
             id: 'gun-acquired',
             title: 'GUN ACQUIRED',
-            iconSrc: '/assets/sprites/collectibles/gun_sprite.png',
+            iconSrc: 'assets/sprites/collectibles/gun_sprite.png',
             keys: ['CTRL', 'L-CLICK'],
             hint: 'to shoot',
             variant: 'info',
@@ -158,7 +158,7 @@ export class InventoryManager {
         GameEventBus.getInstance().emit('toast:show', {
             id: 'totem-acquired',
             title: 'TOTEM ACQUIRED',
-            iconSrc: '/assets/sprites/collectibles/frog_doll_totem.png',
+            iconSrc: 'assets/sprites/collectibles/frog_doll_totem.png',
             hint: 'Shield active',
             variant: 'success',
             durationMs: 3500,

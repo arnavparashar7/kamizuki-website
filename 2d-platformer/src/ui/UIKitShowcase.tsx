@@ -275,7 +275,7 @@ const ShowcaseContent: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
                   state="active"
                 >
                   <img
-                    src="/assets/sprites/collectibles/frog_doll_totem.png"
+                    src="assets/sprites/collectibles/frog_doll_totem.png"
                     alt="Totem"
                     width={26}
                     height={26}
@@ -287,7 +287,7 @@ const ShowcaseContent: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
                 <span className="ui-kit-label">No KeyHint (Gun):</span>
                 <SlotCard state="ready">
                   <img
-                    src="/assets/sprites/collectibles/gun_sprite.png"
+                    src="assets/sprites/collectibles/gun_sprite.png"
                     alt="Gun"
                     width={26}
                     height={26}
@@ -554,7 +554,7 @@ const ShowcaseContent: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
                     showToast({
                       id: 'gun-acquired',
                       title: 'GUN ACQUIRED',
-                      iconSrc: '/assets/sprites/collectibles/gun_sprite.png',
+                      iconSrc: 'assets/sprites/collectibles/gun_sprite.png',
                       keys: ['CTRL', 'L-CLICK'],
                       hint: 'to shoot',
                       variant: 'info',
@@ -570,7 +570,7 @@ const ShowcaseContent: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
                     showToast({
                       id: 'totem-acquired',
                       title: 'TOTEM ACQUIRED',
-                      iconSrc: '/assets/sprites/collectibles/frog_doll_totem.png',
+                      iconSrc: 'assets/sprites/collectibles/frog_doll_totem.png',
                       hint: 'Shield active',
                       variant: 'success',
                     })

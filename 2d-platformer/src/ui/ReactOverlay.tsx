@@ -383,7 +383,7 @@ const ReactOverlayContent: React.FC<ReactOverlayContentProps> = ({ gameState }) 
               aria-label="Blaster Slot"
             >
               <img
-                src="/assets/sprites/collectibles/gun_sprite.png"
+                src="assets/sprites/collectibles/gun_sprite.png"
                 alt="Blaster"
                 width={28}
                 height={28}
@@ -397,7 +397,7 @@ const ReactOverlayContent: React.FC<ReactOverlayContentProps> = ({ gameState }) 
               aria-label="Totem Shield Slot"
             >
               <img
-                src="/assets/sprites/collectibles/frog_doll_totem.png"
+                src="assets/sprites/collectibles/frog_doll_totem.png"
                 alt="Totem Shield"
                 width={28}
                 height={28}

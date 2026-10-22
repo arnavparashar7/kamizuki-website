@@ -1,13 +1,14 @@
 /**
- * KAMIZUKI : WEB3 & THIRDWEB ELIGIBILITY PROVIDER
+ * KAMIZUKI : THIRDWEB WEB3 PROVIDER & ELIGIBILITY ENGINE
  * 
- * Strictly read-only Thirdweb & EVM wallet connection and ERC-721 NFT eligibility engine.
+ * Built from scratch with Thirdweb SDK v5.
  * 
  * SECURITY & UX GUARANTEES:
- * - Wallet connection ONLY retrieves public wallet address (eth_accounts / eth_requestAccounts / Thirdweb).
- * - ZERO transactions, ZERO message signatures, ZERO token approvals, ZERO NFT approvals requested.
+ * - Wallet connection ONLY retrieves public wallet address.
+ * - ZERO transactions, ZERO message signatures, ZERO token approvals requested.
  * - NFT eligibility checking uses read-only blockchain RPC calls (balanceOf).
  * - Short-circuits RPC calls as soon as 1 eligible NFT holding is confirmed.
+ * - Supports WalletConnect v2 (QR code & deep-links), MetaMask, Coinbase Wallet, Rainbow, and In-App wallets.
  */
 
 class KamiZukiWeb3Provider {
@@ -26,24 +27,40 @@ class KamiZukiWeb3Provider {
     };
 
     this.thirdwebClient = null;
+    this.activeWallet = null;
     this.listeners = [];
+
     this.initLocalStorageState();
     this.initThirdwebSDK();
-    this.listenToWalletEvents();
+    this.listenToInjectedEvents();
   }
 
   /**
-   * Initialize Thirdweb Web3 SDK Client
+   * Initialize Thirdweb Web3 Client
    */
-  async initThirdwebSDK() {
+  initThirdwebSDK() {
     try {
       const clientId = window.KAMIZUKI_CONFIG?.THIRDWEB?.CLIENT_ID || "8f566ff051f67f08cf2c40c1737e9095";
-      const { createThirdwebClient } = await import('https://esm.sh/thirdweb');
-      this.thirdwebClient = createThirdwebClient({ clientId });
-      console.log('[KamiZuki Web3] Thirdweb SDK initialized with Client ID:', clientId);
+      if (window.ThirdwebSDK && window.ThirdwebSDK.createThirdwebClient) {
+        this.thirdwebClient = window.ThirdwebSDK.createThirdwebClient({ clientId });
+        console.log('[KamiZuki Web3] Thirdweb SDK v5 Client successfully initialized.');
+      } else {
+        console.warn('[KamiZuki Web3] ThirdwebSDK global not found yet, will initialize on demand.');
+      }
     } catch (err) {
-      console.warn('[KamiZuki Web3] Thirdweb SDK fallback mode:', err);
+      console.warn('[KamiZuki Web3] Error initializing Thirdweb SDK:', err);
     }
+  }
+
+  /**
+   * Ensure Thirdweb Client is ready
+   */
+  getThirdwebClient() {
+    if (!this.thirdwebClient && window.ThirdwebSDK?.createThirdwebClient) {
+      const clientId = window.KAMIZUKI_CONFIG?.THIRDWEB?.CLIENT_ID || "8f566ff051f67f08cf2c40c1737e9095";
+      this.thirdwebClient = window.ThirdwebSDK.createThirdwebClient({ clientId });
+    }
+    return this.thirdwebClient;
   }
 
   initLocalStorageState() {
@@ -71,15 +88,20 @@ class KamiZukiWeb3Provider {
     }
   }
 
-  listenToWalletEvents() {
+  listenToInjectedEvents() {
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length === 0) {
+        if (!accounts || accounts.length === 0) {
           this.disconnectWallet();
-        } else if (accounts[0] !== this.state.walletAddress) {
+        } else if (accounts[0].toLowerCase() !== this.state.walletAddress?.toLowerCase()) {
           this.state.walletAddress = accounts[0];
           this.state.status = 'connected';
           this.checkNFTEligibility(accounts[0]);
+        }
+      });
+      window.ethereum.on('chainChanged', () => {
+        if (this.state.walletAddress) {
+          this.checkNFTEligibility(this.state.walletAddress);
         }
       });
     }
@@ -96,22 +118,23 @@ class KamiZukiWeb3Provider {
 
   /**
    * Connect Wallet using Thirdweb SDK v5
-   * Supports:
-   * - 'walletConnect' (official WalletConnect QR modal across 300+ mobile wallets)
-   * - 'io.metamask' (MetaMask browser extension or app)
+   * 
+   * Supported wallet types:
+   * - 'walletConnect' (Thirdweb WalletConnect with QR code modal for 300+ mobile wallets)
+   * - 'io.metamask' (MetaMask extension / mobile)
    * - 'com.coinbase.wallet' (Coinbase Wallet)
    * - 'me.rainbow' (Rainbow Wallet)
    * - 'inApp' (Thirdweb In-App Wallet: Google / Email)
-   * - 'eligible' | 'ineligible' | 'wrong_network' (Simulation modes)
+   * - 'eligible' | 'ineligible' | 'wrong_network' (Simulation sandbox modes)
    */
   async connectWallet(walletType = 'walletConnect') {
     this.state.status = 'connecting';
     this.state.errorMessage = null;
     this.notify();
 
-    // Simulation Modes for testing UI states without browser wallets
+    // 1. Simulation Sandbox Modes
     if (walletType === 'eligible') {
-      await new Promise(res => setTimeout(res, 400));
+      await new Promise(res => setTimeout(res, 350));
       this.state.status = 'connected';
       this.state.walletAddress = '0x71C8655F37a911B340248a3B5c4E4';
       this.state.isEligible = true;
@@ -122,7 +145,7 @@ class KamiZukiWeb3Provider {
     }
 
     if (walletType === 'ineligible') {
-      await new Promise(res => setTimeout(res, 400));
+      await new Promise(res => setTimeout(res, 350));
       this.state.status = 'connected';
       this.state.walletAddress = '0x98A412B9800310248a3B5c0A1';
       this.state.isEligible = false;
@@ -133,27 +156,28 @@ class KamiZukiWeb3Provider {
     }
 
     if (walletType === 'wrong_network') {
-      await new Promise(res => setTimeout(res, 400));
+      await new Promise(res => setTimeout(res, 350));
       this.state.status = 'disconnected';
       this.state.errorMessage = 'Wrong Network: Please connect to Ethereum Mainnet.';
       this.notify();
       return { success: false, error: this.state.errorMessage };
     }
 
-    // Real Thirdweb Connection
+    // 2. Real Thirdweb Wallet Connection
     try {
-      const clientId = window.KAMIZUKI_CONFIG?.THIRDWEB?.CLIENT_ID || "8f566ff051f67f08cf2c40c1737e9095";
-      
-      if (!this.thirdwebClient) {
-        const { createThirdwebClient } = await import('https://esm.sh/thirdweb@5');
-        this.thirdwebClient = createThirdwebClient({ clientId });
+      if (!window.ThirdwebSDK) {
+        throw new Error('Thirdweb SDK is still loading. Please try again in a few seconds.');
       }
 
-      const { createWallet, inAppWallet } = await import('https://esm.sh/thirdweb@5/wallets');
-      const { ethereum } = await import('https://esm.sh/thirdweb@5/chains');
+      const client = this.getThirdwebClient();
+      if (!client) {
+        throw new Error('Unable to initialize Thirdweb Client. Check your Client ID configuration.');
+      }
 
+      const { createWallet, inAppWallet, ethereum } = window.ThirdwebSDK;
       let wallet;
-      if (walletType === 'inApp') {
+
+      if (walletType === 'inApp' || walletType.startsWith('inApp:')) {
         wallet = inAppWallet();
       } else if (walletType === 'io.metamask') {
         wallet = createWallet('io.metamask');
@@ -167,16 +191,55 @@ class KamiZukiWeb3Provider {
       }
 
       console.log(`[KamiZuki Web3] Connecting via Thirdweb (${walletType})...`);
-      const account = await wallet.connect({
-        client: this.thirdwebClient,
+
+      const connectOptions = {
+        client,
         chain: ethereum
-      });
+      };
+
+      // For inApp wallets, Thirdweb requires a strategy (e.g., 'google', 'email')
+      if (walletType === 'inApp' || walletType.startsWith('inApp:')) {
+        const strategy = walletType.includes(':') ? walletType.split(':')[1] : 'google';
+        if (strategy === 'email') {
+          const email = prompt('Enter your email address to receive login OTP:');
+          if (!email) {
+            this.state.status = 'disconnected';
+            this.notify();
+            return { success: false, error: 'Email login was cancelled.' };
+          }
+          connectOptions.strategy = 'email';
+          connectOptions.email = email;
+        } else {
+          // Default social strategy is Google login
+          connectOptions.strategy = strategy;
+        }
+      }
+
+      // For WalletConnect, hook into onDisplayUri to present custom themed QR code modal
+      if (walletType === 'walletConnect') {
+        connectOptions.walletConnect = {
+          onDisplayUri: (uri) => {
+            console.log('[KamiZuki Web3] WalletConnect URI generated:', uri);
+            if (typeof window.showWalletConnectQRModal === 'function') {
+              window.showWalletConnectQRModal(uri);
+            }
+          }
+        };
+      }
+
+      const account = await wallet.connect(connectOptions);
+
+      // Close QR modal if open
+      if (typeof window.closeWalletConnectQRModal === 'function') {
+        window.closeWalletConnectQRModal();
+      }
 
       if (account && account.address) {
         this.activeWallet = wallet;
         this.state.status = 'connected';
         this.state.walletAddress = account.address;
 
+        // Subscribe to wallet lifecycle events
         if (wallet.subscribe) {
           wallet.subscribe('accountChanged', (newAccount) => {
             if (newAccount?.address) {
@@ -191,26 +254,42 @@ class KamiZukiWeb3Provider {
           });
         }
 
+        // Run read-only NFT eligibility check
         await this.checkNFTEligibility(account.address);
         return { success: true, eligible: this.state.isEligible, address: account.address };
       } else {
-        throw new Error('No account returned from wallet connection');
+        throw new Error('No account returned from Thirdweb wallet connection.');
       }
-    } catch (err) {
-      console.warn('[KamiZuki Web3] Thirdweb connect warning:', err);
 
-      const isUserCancel = err.message?.toLowerCase().includes('reject') || 
-                           err.message?.toLowerCase().includes('cancel') ||
-                           err.message?.toLowerCase().includes('closed');
+    } catch (err) {
+      console.warn('[KamiZuki Web3] Connection notice:', err);
+
+      // Close QR modal on error or cancel
+      if (typeof window.closeWalletConnectQRModal === 'function') {
+        window.closeWalletConnectQRModal();
+      }
+
+      const msg = err.message || '';
+      const isUserCancel = msg.toLowerCase().includes('reject') ||
+                           msg.toLowerCase().includes('cancel') ||
+                           msg.toLowerCase().includes('closed') ||
+                           msg.toLowerCase().includes('modal closed');
 
       if (isUserCancel) {
         this.state.status = 'disconnected';
-        this.state.errorMessage = 'Connection request was cancelled.';
+        this.state.errorMessage = 'Wallet connection was cancelled.';
         this.notify();
         return { success: false, error: this.state.errorMessage };
       }
 
-      // Injected browser extension fallback if MetaMask was chosen
+      if (msg.includes('KEY_NOT_FOUND') || msg.includes('UNAUTHORIZED') || msg.toLowerCase().includes('api key was not found')) {
+        this.state.status = 'disconnected';
+        this.state.errorMessage = 'Thirdweb Client ID inactive or not found. Please paste your active Client ID from thirdweb.com/dashboard into js/config.js.';
+        this.notify();
+        return { success: false, error: this.state.errorMessage };
+      }
+
+      // If user selected MetaMask or Injected but extension not found
       if (walletType === 'io.metamask' && window.ethereum) {
         try {
           const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -326,7 +405,7 @@ class KamiZukiWeb3Provider {
       try {
         await this.activeWallet.disconnect();
       } catch (e) {
-        console.warn('[KamiZuki Web3] Disconnect error:', e);
+        console.warn('[KamiZuki Web3] Disconnect notice:', e);
       }
       this.activeWallet = null;
     }
@@ -359,7 +438,6 @@ class KamiZukiWeb3Provider {
     const ticketContract = window.KAMIZUKI_CONFIG.CONTRACTS.TICKET_CONTRACT_ADDRESS;
 
     if (!ticketContract || ticketContract === 'TBD') {
-      // Contract pending deployment : clean architecture notification
       return {
         success: false,
         pendingContract: true,
@@ -367,7 +445,6 @@ class KamiZukiWeb3Provider {
       };
     }
 
-    // Real Thirdweb / EVM contract execution flow when contract address is updated in config
     this.state.ticketsOwned += count;
     this.state.raffleEntries = this.state.ticketsOwned;
     localStorage.setItem('kamizuki_tickets', this.state.ticketsOwned.toString());
@@ -393,4 +470,3 @@ class KamiZukiWeb3Provider {
 }
 
 window.kamiZukiWeb3 = new KamiZukiWeb3Provider();
-

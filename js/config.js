@@ -11,10 +11,10 @@ window.KAMIZUKI_CONFIG = {
   TAGLINE: "A Play-to-Earn Adventure in a World of Gods, Samurai and Spirits",
   KANJI_TITLE: "神月",
   KANJI_TAGLINE: "神に挑め",
-  
+
   // Thirdweb & Blockchain Environment Configuration
   THIRDWEB: {
-    CLIENT_ID: "8f566ff051f67f08cf2c40c1737e9095", // Replace with your production Thirdweb Client ID
+    CLIENT_ID: "ee1e011c423922e51a8500da9ebd0e10", // Replace with your production Thirdweb Client ID
     DEFAULT_CHAIN_ID: 1, // 1 = Ethereum Mainnet
     NETWORK_NAME: "Ethereum Mainnet",
     SYMBOL: "ETH",

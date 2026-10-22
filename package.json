@@ -6,7 +6,8 @@
     "dev": "npx serve -l 3000 .",
     "start": "npx serve -l 3000 .",
     "serve": "npx serve -l 3000 .",
-    "build:game": "npm run build --prefix 2d-platformer"
+    "build:game": "npm run build --prefix 2d-platformer",
+    "build:web3": "node Scripts/bundle-thirdweb.mjs"
   },
   "keywords": [
     "kamizuki",
@@ -16,5 +17,11 @@
     "platformer"
   ],
   "author": "Godheid",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "thirdweb": "^5.122.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
 }
